@@ -100,6 +100,12 @@ public class ReportServiceImql implements ReportService {
 			paragraph.setSpacingAfter(6);
 			document.add(paragraph);
 
+			SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+			String formattedDate = sdf.format(billDTO.getOrder().getCreateDate());
+
+			Paragraph dateCreated = new Paragraph("Ngày tạo: " + formattedDate,fontKey);
+			document.add(dateCreated);
+
 //            main Info table
 			Paragraph nameUser = new Paragraph("Tên khách hàng: "+billDTO.getOrder().getAccount().getUsername(),fontKey);
 			document.add(nameUser);
@@ -110,12 +116,24 @@ public class ReportServiceImql implements ReportService {
 			Paragraph phone = new Paragraph("Số điện thoại: " + billDTO.getOrder().getPhone(),fontKey);
 			document.add(phone);
 
-			SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-			String formattedDate = sdf.format(billDTO.getOrder().getCreateDate());
+			Paragraph totalAll = new Paragraph("Tổng tiền trước khi áp mã khuyến mại: " + NumberFormater.convertVND(billDTO.getOrder().getPrice()),fontKey);
+			document.add(totalAll);
 
-			Paragraph dateCreated = new Paragraph("Ngày tạo: " + formattedDate,fontKey);
-			dateCreated.setSpacingAfter(20f);
-			document.add(dateCreated);
+			Paragraph voucher = new Paragraph("Mã giảm giá: " + NumberFormater.convertVND(billDTO.getOrder().getVoucher_price()),fontKey);
+			document.add(voucher);
+
+			var totalAmount_ = billDTO.getOrder().getPrice() - billDTO.getOrder().getVoucher_price();
+			Paragraph totalAmount = new Paragraph("Tổng tiền phải trả: " + NumberFormater.convertVND(totalAmount_),fontKey);
+			document.add(totalAmount);
+
+			Paragraph money_give = new Paragraph("Tiền nhận từ khách: " + NumberFormater.convertVND(billDTO.getOrder().getMoney_give()),fontKey);
+			document.add(money_give);
+
+			Paragraph money_send = new Paragraph("Tiền trả lại khách: " + NumberFormater.convertVND(billDTO.getOrder().getMoney_send()),fontKey);
+			money_send.setSpacingAfter(20f);
+			document.add(money_send);
+
+
 
 			PdfPTable pTable = new PdfPTable(5);
 			pTable.setWidthPercentage(100);

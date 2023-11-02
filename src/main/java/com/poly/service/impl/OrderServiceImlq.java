@@ -56,8 +56,9 @@ public class OrderServiceImlq implements OrderService {
 	}
 
 	@Override
-	public Order createBillSell(BillDTO billDTO) {
+	public Order createBillSell(BillDTO billDTO,String code) throws Exception  {
 		Account account = new Account();
+		VoucherDetail voucherDetail = new VoucherDetail();
 		var order = billDTO.getOrder();
 		UUID randomUUID = UUID.randomUUID();
 		var fullname = order.getAccount().getUsername()!=null
@@ -67,7 +68,17 @@ public class OrderServiceImlq implements OrderService {
 		account.setActive(false);
 		Account newAccount = accountDao.save(account);
 		order.setAccount(newAccount);
+		Voucher voucher = null;
+		if(!code.equals("")){
+			voucher = voucherDao.findByVoucherName(code);
+			if(Objects.isNull(voucher)) throw  new Exception("Voucher not found!");
+			else {
+				order.setPrice(order.getPrice()-voucher.getVoucher_price());
+				voucherDetail.setVoucher_id(voucher.getVoucher_id());
+			}
+		}
 		var newOrder = dao.save(order);
+		if(Objects.nonNull(voucher)) voucherDetail.setOrder_id(newOrder.getOrder_id());
 		List<OrderDetail> details = billDTO.getOrderDetails();
 		ddao.saveAll(details);
 		return newOrder;

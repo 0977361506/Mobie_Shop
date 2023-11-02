@@ -39,7 +39,9 @@ public class Order implements Serializable{
 	String method;
 	String intent;
 	String description;
-	
+	Double  money_give= 0.0;
+	Double  money_send= 0.0;
+	Double voucher_price =  0.0;
 	@Temporal(TemporalType.TIMESTAMP)
 	@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
 	@Column(name = "Createdate")

@@ -1,6 +1,61 @@
 const app = angular.module("admin-ctrl", []);
 app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
+    $scope.voucher={
+        voucherCode : localStorage.getItem('voucher_sell') || '',
+        errorMessage :"",
+        voucherPrice:0,
+        isValid: 0 ,  // = 0 chưa nhập voucher, 1 là nhập đúng, 2 là nhập sai
+        showMessage(message){
+            alert(message)
+            $scope.voucher.errorMessage=message
+            $("#myModal").modal("hide");
+        },
+        getVoucher(code){
+            if(code){
+                $http.get(`/rest/voucher/code?code=`+code).then(resp => {
+                    this.voucherPrice = resp.data.voucher_price ;
+                    this.isValid = 1;
+                }).catch(error => {
+                    console.log(error)
+                })
+            }else {
+                this.voucherPrice = 0
 
+            }
+
+        },
+        saveVoucherCode(){
+            $http.get(`/rest/voucher/vadidate?code=`+$scope.voucher.voucherCode).then(resp => {
+                const isValidVoucher  =  resp.data;
+                if(isValidVoucher!=1000){ // Voucher không hợp lệ
+                    if(isValidVoucher==1001){
+                        $scope.voucher.errorMessage = "Voucher không tồn tại."
+                        this.voucherPrice = 0;
+                        this.isValid = 2;
+                    }else if(isValidVoucher==1002){
+                        $scope.voucher.errorMessage = "Voucher hết hạn."
+                        this.voucherPrice = 0;
+                        this.isValid = 2;
+                    }else{
+                        $scope.voucher.errorMessage = "Voucher không hợp lệ."
+                        this.voucherPrice = 0;
+                        this.isValid = 2;
+                    }
+                }else{
+                    this.isValid = 1;
+                    $scope.voucher.errorMessage =  ""
+                    localStorage.setItem("voucher_sell", this.voucherCode);
+                    this.getVoucher(this.voucherCode);
+
+                }
+            }).catch(error => {
+                console.log(error)
+            })
+        },
+        clearVoucher(){
+            localStorage.removeItem("voucher_sell");
+        }
+    }
     $scope.cart = {
         username:"",
         keySearch:"",
@@ -82,6 +137,7 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
             this.username= "";
             this.keySearch= "";
             this.saveToLocalStorage();
+            localStorage.removeItem("cart_sell");
         },
         amt_of(item) {},
         get count() {
@@ -107,11 +163,11 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
         },
         saveToLocalStorage() {
             var json = JSON.stringify(angular.copy(this.items));
-            localStorage.setItem("cart", json);
+            localStorage.setItem("cart_sell", json);
 
         },
         loadFromLocalStorage() {
-            var json = localStorage.getItem("cart");
+            var json = localStorage.getItem("cart_sell");
             this.items = json ? JSON.parse(json) : [];
         },
         getProducts(pageNumber){
@@ -134,10 +190,10 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
 
     }
     $scope.cart.getProducts(1);
+    $scope.voucher.getVoucher(localStorage.getItem('voucher_sell') || '')
     $scope.cart.loadFromLocalStorage();
     $scope.order = {
         createDate: new Date(),
-
         address: "",
         phone : "",
         status : 0,
@@ -145,7 +201,9 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
         method: 'Trả sau',
         currency: 'VND',
         description: '',
-
+        voucher_price:0,
+        money_give:0,
+        money_send:0,
         price : $scope.cart.amount,
         account: { username:""},
         get orderDetails() {
@@ -157,22 +215,33 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 }
             });
         },
+        caculatorMoneySend(){
+            const amount = $scope.cart.amount - $scope.voucher.voucherPrice;
+            const moneySend = this.money_give - amount;
+            const totalAmount = (moneySend > 0) ? moneySend: 0;
+            this.money_send=  totalAmount;
+        },
         clear(){
           this.address="";
           this.phone="";
-          this.description=""
+          this.description="";
+          this.money_give=0;
+          $scope.voucher.isValid =0;
         },
         purchase() {
 
             var order = angular.copy(this);
             order.price = $scope.cart.amount;
-            order.account.username = $scope.cart.username?$scope.cart.username:"Anonymous"
-            $http.post("/rest/orders/sell", order).then(resp => {
+            order.account.username = $scope.cart.username?$scope.cart.username:"Anonymous";
+            order.voucher_price = $scope.voucher.voucherPrice;
+            $http.post("/rest/orders/sell?code="+$scope.voucher.voucherCode, order).then(resp => {
                 alert("Đặt hàng thành công");
                 $scope.cart.clear();
                 this.clear();
                 $("#modal-checkout").modal("hide")
                 $scope.cart.printBill(resp.data.pathFile)
+                $scope.voucher.clearVoucher();
+                $scope.voucher.voucherCode = "";
             }).catch(error => {
                 alert("Đặt hàng thất bại");
                 console.log(error)

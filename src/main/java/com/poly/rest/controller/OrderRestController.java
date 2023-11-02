@@ -41,10 +41,10 @@ public class OrderRestController {
 	}
 
 	@PostMapping("/rest/orders/sell")
-	public FileDTO createOrderOfSell(@RequestBody JsonNode orderData) {
+	public FileDTO createOrderOfSell(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Exception {
 		var billDTO = JsonMapper.convertToBillDTO(orderData);
 		String pdfPath= reportService.createPdf(billDTO);
-		orderService.createBillSell(billDTO);
+		orderService.createBillSell(billDTO,code);
 		FileDTO fileDTO = new FileDTO(pdfPath);
 		return fileDTO;
 	}

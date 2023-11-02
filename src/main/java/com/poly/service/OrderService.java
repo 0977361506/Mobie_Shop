@@ -11,7 +11,7 @@ public interface OrderService {
 
 	Order create(JsonNode orderData,String code) throws Exception;
 
-	Order createBillSell(BillDTO billDTO);
+	Order createBillSell(BillDTO billDTO,String code) throws Exception;
 
 	Order findById(Integer id);
 

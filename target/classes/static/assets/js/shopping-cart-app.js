@@ -171,6 +171,7 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
 	            $http.post("/rest/orders", order).then(resp => {
 	                alert("Đặt hàng thành công");
 	                $scope.cart.clear();
+                    // $scope.voucher.clearVoucher;
 	                location.href = "/order/detail/" + resp.data.order_id;
 	            }).catch(error => {
 	                alert("Đặt hàng thất bại");
@@ -216,6 +217,7 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
                 $http.post("/rest/orders?code="+$scope.voucher.voucherCode, order).then(resp => {
                     alert("Đặt hàng thành công");
                     $scope.cart.clear();
+                    $scope.voucher.clearVoucher();
                     location.href = "/order/detail/" + resp.data.order_id;
                 }).catch(error => {
                     alert("Đặt hàng thất bại");
