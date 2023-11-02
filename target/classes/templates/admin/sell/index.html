@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout/index :: dynamic(~{::main})}">
+
+
+<body >
+<main ng-controller="shopping-cart-sell-ctrl">
+
+    <div class="row cart-body">
+        <div class="cart-left col col-sm-5" style="width: 55%">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <tbody>
+                    <tr ng-repeat="item in cart.items" >
+                        <td class="text-center" style="width: 20%;"><a href="#"><img
+                                style="width: 60%;" src="/assets/images/{{item.image1}}"></a></td>
+                        <td class="text-center">{{item.name}}</td>
+                        <td class="text-center">{{item.distcount}}%</td>
+                        <td  class="text-center" style="width: 120px"><input
+                                ng-change="cart.saveToLocalStorage()"
+                                ng-model="item.quantity" type="number" size="4" value="1"
+                                min="1"  step="1" style="width: 75%"></td>
+                        <td class="text-center">{{cart.formatVND(item.unit_price | number :0)}} đ</td>
+                        <td class="text-center">{{cart.formatVND(item.quantity*item.unit_price-((item.quantity*item.unit_price)*item.distcount/100)
+                            | number:0)}} đ</td>
+                        <td class="text-center">
+                            <a ng-click="cart.remove(item.product_id)">
+                                <button class="btn btn-default">
+                                    <b class="fa fa-trash"></b>
+                                </button>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="cart-left-footer" style="margin-top: 53px">
+                <div class="clearfix">
+                    <div class="cart-note pull-left">
+                        <div class="note-container">
+                  <span class="pencil-icon"
+                  ><i class="fas fa-pencil-alt"></i
+                  ></span>
+                            <input
+                                    type="text"
+                                    class="note-item form-control"
+                                    placeholder="Ghi chú đơn hàng"
+                                    ng-model="order.description"
+                            />
+                        </div>
+                    </div>
+                    <div class="cart-total pull-right">
+                        <h5 class="total-amount">
+                            Tổng tiền: <span class="amount">{{ cart.formatVND(cart.amount) }}</span>
+                        </h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-right col col-sm-7" style="width: 44%;margin-left: 10px;">
+            <div class="cart-search">
+                <form>
+                    <div class="search-container">
+                        <input
+                                type="text"
+                                class="search-item form-control"
+                                placeholder="Nhập tên sản phẩm..."
+                                ng-model="cart.keySearch"
+                                ng-keypress="cart.searchProduct($event)"
+                        />
+                        <span class="search-icon"><i class="fa fa-search"></i></span>
+                    </div>
+                </form>
+            </div>
+            <div class="list-items p-3" style="margin-top: 11px;">
+                <div class="row">
+                    <div  ng-repeat="item in cart.products" class="col-md-4 element-item ">
+                        <div class="d-flex w-100 " ng-click="cart.add(item.product_id)">
+                            <div class="item-img w-50 ">
+                                <img
+                                        src="/assets/images/{{item.image1}}"
+                                        style="width: 100%; height: 100%"
+                                />
+                            </div>
+                            <div class="infor-item w-70 ">
+                                <h5 class="item-name" style="margin: 0px">{{item.name}}</h5>
+                                <div class="item-quantity">x {{item.quantity}}</div>
+                                <div class="item-price">{{cart.formatVND(item.unit_price)}}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="cart-right-footer">
+                <div class="clearfix">
+                    <div class="pagination-items pull-left">
+                        <ul class="list-pagination pagination-sm ">
+                            <li class="page-item">
+                                <button class="btn-icon btn-icon-bg-default" type="button" ng-click="cart.prevPage()">
+                                    <i class="fa fa-arrow-left" aria-hidden="true"></i>
+                                </button>
+                            </li>
+                            <li class="page-item d-flex align-items-center">
+                                <h6 class="number-pages">{{cart.currentPage}}/{{cart.totalPages}}</h6>
+                            </li>
+                            <li class="page-item">
+                                <button class="btn-icon btn-icon-bg-default" type="button" ng-click="cart.nextPage()">
+                                    <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="btn-checkout pull-right">
+                        <button
+                                ng-disabled="cart.amount === 0"
+                                type="button"
+                                class="btn btn-primary"
+                                data-toggle="modal"
+                                data-target="#modal-checkout"
+                        >
+                            Thanh toán
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    <div class="modal fade" id="modal-checkout">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 style="text-align: center">Thông tin đặt hàng</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="panel-primary">
+                        <div class="panel-body-dh">
+                            <div class="row">
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Người mua</div>
+                                    <input ng-model="cart.username" class="form-control" required>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Ngày đặt hàng</div>
+                                    <div class="form-control" readonly>{{order.createDate | date : 'dd-MM-yyyy HH:mm'}}</div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Số điện thoại</div>
+                                    <input ng-model="order.phone" class="form-control">
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Tổng tiền</div>
+                                    <div class="form-control" readonly> {{ cart.formatVND(cart.amount) }}</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group col-sm-12">
+                                    <div class="thongtin">Địa chỉ giao hàng</div>
+                                    <textarea ng-model="order.address"  class="form-control"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                                class="panel-footer panel-footer"
+                        >
+                            <div class="clearfix">
+                              <div class="pull-left">
+                                  <button
+                                          type="button"
+                                          class="btn btn-primary"
+                                          id="printButton"
+                                          ng-click="order.purchase()"
+                                  >
+                                      Thanh toán
+                                  </button>
+                              </div>
+                                <div class="pull-right">
+                                    <button
+                                            type="button"
+                                            class="btn btn-danger"
+                                            data-dismiss="modal"
+                                    >
+                                       Hủy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>
