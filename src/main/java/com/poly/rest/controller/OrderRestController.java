@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.poly.dtos.FileDTO;
 import com.poly.entity.Voucher;
+import com.poly.exceptions.MoneyNotEnoughException;
 import com.poly.mappers.JsonMapper;
 import com.poly.service.ReportService;
 import com.poly.service.VoucherService;
@@ -43,6 +44,8 @@ public class OrderRestController {
 	@PostMapping("/rest/orders/sell")
 	public FileDTO createOrderOfSell(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Exception {
 		var billDTO = JsonMapper.convertToBillDTO(orderData);
+		if(billDTO.getOrder().getMoney_give()<(billDTO.getOrder().getPrice()-billDTO.getOrder().getVoucher_price()))
+			throw  new MoneyNotEnoughException("Money not enough");
 		String pdfPath= reportService.createPdf(billDTO);
 		orderService.createBillSell(billDTO,code);
 		FileDTO fileDTO = new FileDTO(pdfPath);

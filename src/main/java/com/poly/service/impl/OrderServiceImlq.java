@@ -68,6 +68,7 @@ public class OrderServiceImlq implements OrderService {
 		account.setActive(false);
 		Account newAccount = accountDao.save(account);
 		order.setAccount(newAccount);
+		order.setStatus(3);
 		Voucher voucher = null;
 		if(!code.equals("")){
 			voucher = voucherDao.findByVoucherName(code);

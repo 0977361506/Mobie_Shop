@@ -243,7 +243,8 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 $scope.voucher.clearVoucher();
                 $scope.voucher.voucherCode = "";
             }).catch(error => {
-                alert("Đặt hàng thất bại");
+                if(error?.data) alert(error.data.data)
+                else alert("Đặt hàng thất bại");
                 console.log(error)
             })
         },
