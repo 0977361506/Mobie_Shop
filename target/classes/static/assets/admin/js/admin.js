@@ -242,8 +242,19 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 $scope.cart.printBill(resp.data.pathFile)
                 $scope.voucher.clearVoucher();
                 $scope.voucher.voucherCode = "";
+                window.location.reload();
             }).catch(error => {
-                if(error?.data) alert(error.data.data)
+                if(error?.data){
+                    if(error.data.status==444)alert(error.data.data);
+                    else {
+                        var alertMessage = "";
+                        const jsonArray = JSON.parse(error.data.message);
+                        jsonArray.forEach(function(item) {
+                            alertMessage += item + "\n";
+                        });
+                        alert(alertMessage)
+                    }
+                }
                 else alert("Đặt hàng thất bại");
                 console.log(error)
             })

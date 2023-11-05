@@ -37,12 +37,12 @@ public class OrderRestController {
 	}
 	
 	@PostMapping("/rest/orders")
-	public Order create(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Exception {
+	public Order create(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Throwable {
 		return orderService.create(orderData,code);
 	}
 
 	@PostMapping("/rest/orders/sell")
-	public FileDTO createOrderOfSell(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Exception {
+	public FileDTO createOrderOfSell(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Throwable {
 		var billDTO = JsonMapper.convertToBillDTO(orderData);
 		if(billDTO.getOrder().getMoney_give()<(billDTO.getOrder().getPrice()-billDTO.getOrder().getVoucher_price()))
 			throw  new MoneyNotEnoughException("Money not enough");

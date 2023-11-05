@@ -9,9 +9,9 @@ import com.poly.entity.Order;
 public interface OrderService {
 
 
-	Order create(JsonNode orderData,String code) throws Exception;
+	Order create(JsonNode orderData,String code) throws Throwable;
 
-	Order createBillSell(BillDTO billDTO,String code) throws Exception;
+	Order createBillSell(BillDTO billDTO,String code) throws Throwable;
 
 	Order findById(Integer id);
 

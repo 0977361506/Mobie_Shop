@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import com.poly.dtos.ProductEnoughQuantityDTO;
+import com.poly.entity.OrderDetail;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +23,7 @@ public interface ProductService {
 	Product findById(Integer id);
 
 
-	
+	void saveAll(List<Product> products);
 	
 	Product create(Product product);
 
@@ -34,10 +36,11 @@ public interface ProductService {
 	List<Product> findByKeywords(String keywords);
 
 	List<Product> findByTrademarkId(Integer integer);
-	public File save(MultipartFile file, String path) throws IOException;
+	File save(MultipartFile file, String path) throws IOException;
 
-	public Page<Product> findAllProductsWithCondition(int pageNumber, int pageSize, String keySearch);
-	
+	Page<Product> findAllProductsWithCondition(int pageNumber, int pageSize, String keySearch);
+
+	ProductEnoughQuantityDTO checkQuantityEnough(List<OrderDetail> orderDetails) throws Throwable;
 	
 
 }

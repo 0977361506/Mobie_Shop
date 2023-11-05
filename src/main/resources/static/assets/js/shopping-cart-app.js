@@ -220,7 +220,18 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
                     $scope.voucher.clearVoucher();
                     location.href = "/order/detail/" + resp.data.order_id;
                 }).catch(error => {
-                    alert("Đặt hàng thất bại");
+                    if(error?.data){
+                        if(error.data.status==444)alert(error.data.data);
+                        else {
+                            var alertMessage = "";
+                            const jsonArray = JSON.parse(error.data.message);
+                            jsonArray.forEach(function(item) {
+                                alertMessage += item + "\n";
+                            });
+                            alert(alertMessage)
+                        }
+                    }
+                    else alert("Đặt hàng thất bại");
                     console.log(error)
                 })
 	        },

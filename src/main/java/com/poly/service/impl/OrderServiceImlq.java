@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import com.poly.dao.*;
 import com.poly.dtos.BillDTO;
 import com.poly.entity.*;
+import com.poly.exceptions.QuantityNotEnoughException;
+import com.poly.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.poly.service.OrderService;
+
+import javax.transaction.Transactional;
 
 @Service
 public class OrderServiceImlq implements OrderService {
@@ -29,11 +33,18 @@ public class OrderServiceImlq implements OrderService {
 	VoucherDao voucherDao;
     @Autowired
 	VoucherDetailDao voucherDetailDao;
+    @Autowired
+	ProductService productService;
+
 	@Override
-	public Order create(JsonNode orderData,String code) throws Exception {
+	@Transactional
+	public Order create(JsonNode orderData,String code) throws Throwable {
 		VoucherDetail voucherDetail = new VoucherDetail();
 		ObjectMapper mapper= new ObjectMapper();
 		Order order = mapper.convertValue(orderData, Order.class);
+		TypeReference<List<OrderDetail>> type =new TypeReference<List<OrderDetail>>() {};
+		List<OrderDetail> details=mapper.convertValue(orderData.get("orderDetails"),type )
+				.stream().peek(d ->d.setOrder(order)).collect(Collectors.toList());
 		Voucher voucher = null;
 		if(!code.equals("")){
 			voucher = voucherDao.findByVoucherName(code);
@@ -43,20 +54,26 @@ public class OrderServiceImlq implements OrderService {
 				voucherDetail.setVoucher_id(voucher.getVoucher_id());
 			}
 		}
+		var errors = productService.checkQuantityEnough(details);
+		if(errors.getErrors().size()>0){
+			ObjectMapper objectMapper = new ObjectMapper();
+			String error = objectMapper.writeValueAsString(errors.getErrors());
+			throw  new QuantityNotEnoughException(error);
+		}
+		productService.saveAll(errors.getProducts());
+
 		Order orderNew = dao.save(order);
 
 		if(Objects.nonNull(voucher)) voucherDetail.setOrder_id(orderNew.getOrder_id());
 		voucherDetailDao.save(voucherDetail);
-		TypeReference<List<OrderDetail>> type =new TypeReference<List<OrderDetail>>() {};
-		List<OrderDetail> details=mapper.convertValue(orderData.get("orderDetails"),type )
-				.stream().peek(d ->d.setOrder(order)).collect(Collectors.toList());
 		ddao.saveAll(details);
 		return order;
 		
 	}
 
 	@Override
-	public Order createBillSell(BillDTO billDTO,String code) throws Exception  {
+	@Transactional
+	public Order createBillSell(BillDTO billDTO,String code) throws Throwable {
 		Account account = new Account();
 		VoucherDetail voucherDetail = new VoucherDetail();
 		var order = billDTO.getOrder();
@@ -78,6 +95,13 @@ public class OrderServiceImlq implements OrderService {
 				voucherDetail.setVoucher_id(voucher.getVoucher_id());
 			}
 		}
+		var errors = productService.checkQuantityEnough(billDTO.getOrderDetails());
+		if(errors.getErrors().size()>0){
+			ObjectMapper objectMapper = new ObjectMapper();
+			String error = objectMapper.writeValueAsString(errors.getErrors());
+			throw  new QuantityNotEnoughException(error);
+		}
+		productService.saveAll(errors.getProducts());
 		var newOrder = dao.save(order);
 		if(Objects.nonNull(voucher)) voucherDetail.setOrder_id(newOrder.getOrder_id());
 		List<OrderDetail> details = billDTO.getOrderDetails();

@@ -2,6 +2,7 @@ package com.poly.controller.user;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -59,8 +60,11 @@ public class ProductController {
 	public String showProductPage(HttpServletRequest request, @PathVariable int pageNumber, Model model) {
 		PagedListHolder<?> pages = (PagedListHolder<?>) request.getSession().getAttribute("productlist");
 		int pagesize = 9;
-		List<Product> list = (List<Product>) productService.findAll();
-		model.addAttribute("sizepro", productService.findAll().size());
+		List<Product> list = (List<Product>) productService.findAll().stream()
+				.filter(product -> product.getQuantity() > 0)
+				.collect(Collectors.toList());
+
+		model.addAttribute("sizepro", list.size());
 		
 		if (pages == null) {
 			pages = new PagedListHolder<>(list);

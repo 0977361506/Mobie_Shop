@@ -4,11 +4,14 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.poly.dtos.ProductEnoughQuantityDTO;
+import com.poly.entity.OrderDetail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -47,6 +50,10 @@ public class ProductServiceImlq implements ProductService {
 		return pdao.findById(id).get();
 	}
 
+	@Override
+	public void saveAll(List<Product> products) {
+		pdao.saveAll(products);
+	}
 
 
 	@Override
@@ -146,6 +153,26 @@ public class ProductServiceImlq implements ProductService {
 		return pdao.findAll(combinedSpecification, pageable);
 
 
+	}
+
+	@Override
+	public ProductEnoughQuantityDTO checkQuantityEnough(List<OrderDetail> orderDetails) throws Throwable {
+
+		List<String> errors = new ArrayList<>();
+		List<Product> products = new ArrayList<>();
+		for(OrderDetail item: orderDetails){
+			Optional optional = pdao.findById(item.getProduct().getProduct_id());
+			Product product = (Product) optional.orElseThrow(() -> new NullPointerException("Sản phẩm không tồn tại."));
+			if(item.getProduct().getQuantity()>product.getQuantity()) {
+				var error = "Số lượng sản phẩm: "+product.getName()+" trong kho hiện không đủ. Số lượng khả dụng: "+product.getQuantity();
+				errors.add(error);
+			}else{
+				var remainingAmount = product.getQuantity() - item.getProduct().getQuantity();
+				product.setQuantity(remainingAmount);
+			}
+		}
+		ProductEnoughQuantityDTO dto = ProductEnoughQuantityDTO.builder().products(products).errors(errors).build();
+		return dto;
 	}
 
 }
