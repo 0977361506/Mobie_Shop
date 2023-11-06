@@ -161,7 +161,9 @@ public class ProductController {
 			HttpServletRequest request,
 			@PathVariable int pageNumber) {
 		
-			List<Product> list = pdao.findByDis();
+			List<Product> list = pdao.findByDis().stream()
+					.filter(product -> product.getQuantity() > 0)
+					.collect(Collectors.toList());
 			model.addAttribute("items", list);
 			PagedListHolder<?> pages = (PagedListHolder<?>) request.getSession().getAttribute("productlist");
 			int pagesize = 12;
@@ -190,7 +192,9 @@ public class ProductController {
 	@RequestMapping("/product/latest")
 	public String latest(Model model, @RequestParam("cid") Optional<Integer> cid) {
 	
-			List<Product> list = pdao.findByLatest();
+			List<Product> list = pdao.findByLatest().stream()
+					.filter(product -> product.getQuantity() > 0)
+					.collect(Collectors.toList());
 			model.addAttribute("items", list);
 		
 		return "user/product/latest";
@@ -200,7 +204,9 @@ public class ProductController {
 	public String special(Model model, @RequestParam("cid") Optional<Integer> cid,
 			@RequestParam("page") Optional<Integer> page) {
 		
-			List<Product> list = pdao.findBySpecial();
+			List<Product> list = pdao.findBySpecial().stream()
+					.filter(product -> product.getQuantity() > 0)
+					.collect(Collectors.toList());
 			model.addAttribute("items", list);
 		
 

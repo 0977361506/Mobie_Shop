@@ -1,6 +1,7 @@
 package com.poly.controller.user;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -29,11 +30,17 @@ public class HomeController {
 	AccountDao dao;
 	@RequestMapping("/home/index")
 	public String home(Model model) {
-		List<Product> list = pdao.findByAllDis();
+		List<Product> list = pdao.findByAllDis().stream()
+				.filter(product -> product.getQuantity() > 0)
+				.collect(Collectors.toList());
 		model.addAttribute("item1", list);
-		List<Product> list1 = pdao.findByAllSpe();
+		List<Product> list1 = pdao.findByAllSpe().stream()
+				.filter(product -> product.getQuantity() > 0)
+				.collect(Collectors.toList());
 		model.addAttribute("item2", list1);
-		List<Product> list2 = pdao.getTop10();
+		List<Product> list2 = pdao.getTop10().stream()
+				.filter(product -> product.getQuantity() > 0)
+				.collect(Collectors.toList());
 		model.addAttribute("item3", list2);
 	
 		return "user/home/index";

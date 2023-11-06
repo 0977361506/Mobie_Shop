@@ -59,12 +59,43 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
         getcomment :[],
         get_orderid :0,
         prod : [] ,
+        checkBeforeSaveToLocalStorage(quantityBuy,idProduct) {
+           $http.get(`/rest/products/${idProduct}`).then(resp => {
+               const foundItem = resp.data
+               if(!quantityBuy) this.updateItemInCart(foundItem.product_id,1);
+               else {
+                   if(quantityBuy>foundItem.quantity){
+                       this.updateItemInCart(foundItem.product_id,foundItem.quantity);
+                       var json = JSON.stringify(angular.copy(this.items));
+                       localStorage.setItem("cart", json);
+                       alert("Sản phẩm bạn muốn mua vượt quá số lượng trong kho, số lượng khả dụng: "+foundItem.quantity )
+                   }
+                   else{
+                       this.updateItemInCart(foundItem.product_id,quantityBuy);
+                       var json = JSON.stringify(angular.copy(this.items));
+                       localStorage.setItem("cart", json);
+                   }
+               }
+            });
+        },
+        updateItemInCart(productId, quantityUpdate){
+            var updatedArray = this.items.map(element => {
+                if (element.product_id === productId) {
+                    element.quantity = quantityUpdate;
+                }
+                return element;
+            });
+            this.items = updatedArray
+        },
         add(product_id) {
             var item = this.items.find(item => (item.product_id == product_id ));
 
             if (item) {
-                item.quantity++;
-                this.saveToLocalStorage();
+                $http.get(`/rest/products/${product_id}`).then(resp => {
+                    let quantityNew = item.quantity + 1;
+                    this.checkBeforeSaveToLocalStorage(quantityNew,item.product_id)
+                })
+                // this.saveToLocalStorage();
             } else {
                 $http.get(`/rest/products/${product_id}`).then(resp => {
                     resp.data.quantity = 1;

@@ -90,8 +90,8 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
             var item = this.items.find(item => (item.product_id == product_id ));
 
             if (item) {
-                item.quantity++;
-                this.saveToLocalStorage();
+                this.checkBeforeSaveToLocalStorage(item.quantity+1,item.product_id)
+                // this.saveToLocalStorage();
             } else {
                 $http.get(`/rest/products/${product_id}`).then(resp => {
                     resp.data.quantity = 1;
@@ -166,6 +166,34 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
             localStorage.setItem("cart_sell", json);
 
         },
+        checkBeforeSaveToLocalStorage(quantityBuy,idProduct) {
+            const foundItem = this.products.find(element => element.product_id === idProduct);
+            if(!quantityBuy) this.updateItemInCart(foundItem.product_id,1);
+            else {
+                if(quantityBuy>foundItem.quantity){
+                    this.updateItemInCart(foundItem.product_id,foundItem.quantity);
+                    alert("Sản phẩm bạn muốn mua vượt quá số lượng trong kho, số lượng khả dụng: "+foundItem.quantity )
+                    var json = JSON.stringify(angular.copy(this.items));
+                    localStorage.setItem("cart_sell", json);
+                }
+                else{
+                    this.updateItemInCart(foundItem.product_id,quantityBuy);
+                    var json = JSON.stringify(angular.copy(this.items));
+                    localStorage.setItem("cart_sell", json);
+                }
+            }
+
+        },
+        updateItemInCart(productId, quantityUpdate){
+            var updatedArray = this.items.map(element => {
+                if (element.product_id === productId) {
+                    element.quantity = quantityUpdate;
+                }
+                return element;
+            });
+            this.items = updatedArray
+        },
+
         loadFromLocalStorage() {
             var json = localStorage.getItem("cart_sell");
             this.items = json ? JSON.parse(json) : [];
@@ -198,7 +226,7 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
         phone : "",
         status : 0,
         intent: 'Sale',
-        method: 'Trả sau',
+        method: 'Trả trực tiếp',
         currency: 'VND',
         description: '',
         voucher_price:0,
@@ -242,7 +270,22 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 $scope.cart.printBill(resp.data.pathFile)
                 $scope.voucher.clearVoucher();
                 $scope.voucher.voucherCode = "";
-                window.location.reload();
+                $scope.order = {
+                    createDate: new Date(),
+                    address: "",
+                    phone: "",
+                    status: 0,
+                    intent: 'Sale',
+                    method: 'Trả trực tiếp',
+                    currency: 'VND',
+                    description: '',
+                    voucher_price: 0,
+                    money_give: 0,
+                    money_send: 0,
+                    price: 0,
+                    account: {username: ""}
+                }
+               // window.location.reload();
             }).catch(error => {
                 if(error?.data){
                     if(error.data.status==444)alert(error.data.data);
