@@ -76,7 +76,7 @@ public interface ProductDao extends JpaRepository<Product, Integer>, JpaSpecific
 
 		@Query(value="select * from Products INNER JOIN product_detail on Products.Product_id = product_detail.ProductID " +
 				" where Products.Unit_price between ?1 and ?2 and Products.Category_id  like %?3% and Products.Trademark_id like %?4% " +
-				"  product_detail.Ram like %?5% " +
+				" and  product_detail.Ram like %?5% " +
 				"   and product_detail.Rom like %?6% and product_detail.Resolution like  %?7% ", nativeQuery = true)
 		List<Product> findByAllKeyWord(
 				@Param("MinPrice") Integer unit_price, @Param("MaxPrice") Integer unit_price1   ,
