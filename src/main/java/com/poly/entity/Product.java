@@ -1,19 +1,10 @@
 package com.poly.entity;
 
+import java.awt.*;
 import java.util.Date;
 import java.util.List;
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -33,19 +24,33 @@ public class Product implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	Integer Product_id;
 	String Name;
+	@Transient
 	String Image1;
+	@Transient
 	String Image2 = null;
+	@Transient
 	String Image3 = null;
+	@Transient
 	String Image4 = null;
+	@Transient
 	String Image5 = null;
+	@Transient
 	String Image6 = null;
+	@Transient
 	String Image7 = null;
+	@Transient
 	String Detail ;
+	@Transient
 	String Description;
+	@Transient
 	String Chip;
+	@Transient
 	String Ram;
+	@Transient
 	String Rom;
+	@Transient
 	String Resolution;
+	@Transient
 	String Pin;
 	Double Unit_price;
 	Integer Quantity;
@@ -64,7 +69,13 @@ public class Product implements Serializable {
 	Trademark trademark;
 	@JsonIgnore
 	@OneToMany(mappedBy = "product")
-	List<OrderDetail> orderDetails;	
-	
+	List<OrderDetail> orderDetails;
+
+//	@OneToMany(mappedBy = "product")
+//	List<ImageProduct> imageProducts;
+//
+//
+//	@OneToOne(mappedBy = "product")
+//	private ProductDetail productDetail;
 	
 }

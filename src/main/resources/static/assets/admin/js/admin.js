@@ -70,6 +70,7 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
         prod : [] ,
         searchProduct(event){
             if (event.keyCode === 13) {
+                console.log(event)
                 this.getProducts(1)
             }
         },
@@ -95,7 +96,7 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
             } else {
                 $http.get(`/rest/products/${product_id}`).then(resp => {
                     resp.data.quantity = 1;
-
+                    this.updateViewWhenChangeQuantityItem(product_id,-1)
                     this.items.push(resp.data);
                     this.saveToLocalStorage();
                 })
@@ -118,6 +119,22 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 this.getitem = resp.data;
                 this.saveToLocalStorage();
             })
+        },
+        updateViewWhenChangeQuantityItem(product_id,newQuantity){
+            // this.products.map(function(element) {
+            //     if (element.product_id === product_id) {
+            //         return { ...element, quantity: element.quantity + newQuantity };
+            //     }
+            //     return element;
+            // });
+          // this.products = [...products]
+            const item_id = `#item_`+product_id
+            const foundItem = this.products.find(element => element.product_id === product_id);
+            if(foundItem){
+                const quantity = foundItem.quantity+newQuantity
+                $(item_id).text("x "+quantity);
+                $("#item_quantity").val(quantity);
+            }
         }
         ,
         maxquantity(product_id){
@@ -129,6 +146,19 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
         ,
         remove(product_id) {
             var index = this.items.findIndex(item => item.product_id == product_id);
+            const foundItem = this.products.find(element => element.product_id === product_id);
+            if(foundItem){
+                const currentQuantity =  $("#item_quantity").val();
+                if(currentQuantity+1>foundItem.quantity){
+                    this.updateViewWhenChangeQuantityItem(foundItem.product_id,0)
+                }else{
+                    if(currentQuantity==0) this.updateViewWhenChangeQuantityItem(foundItem.product_id,0)
+                    else {
+                        this.updateViewWhenChangeQuantityItem(foundItem.product_id,1)
+                    }
+                }
+            }
+
             this.items.splice(index, 1);
             this.saveToLocalStorage();
         },
@@ -168,16 +198,21 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
         },
         checkBeforeSaveToLocalStorage(quantityBuy,idProduct) {
             const foundItem = this.products.find(element => element.product_id === idProduct);
-            if(!quantityBuy) this.updateItemInCart(foundItem.product_id,1);
+            if(!quantityBuy) {
+                this.updateViewWhenChangeQuantityItem(foundItem.product_id,-1)
+                this.updateItemInCart(foundItem.product_id,1);
+            }
             else {
                 if(quantityBuy>foundItem.quantity){
                     this.updateItemInCart(foundItem.product_id,foundItem.quantity);
+                    this.updateViewWhenChangeQuantityItem(foundItem.product_id,-foundItem.quantity)
                     alert("Sản phẩm bạn muốn mua vượt quá số lượng trong kho, số lượng khả dụng: "+foundItem.quantity )
                     var json = JSON.stringify(angular.copy(this.items));
                     localStorage.setItem("cart_sell", json);
                 }
                 else{
                     this.updateItemInCart(foundItem.product_id,quantityBuy);
+                    this.updateViewWhenChangeQuantityItem(foundItem.product_id,-quantityBuy)
                     var json = JSON.stringify(angular.copy(this.items));
                     localStorage.setItem("cart_sell", json);
                 }
@@ -200,12 +235,14 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
         },
         getProducts(pageNumber){
             const url = `/rest/products/list?pageNumber=${pageNumber-1}&pageSize=15&keySearch=${this.keySearch}`
-            if(pageNumber>0 && pageNumber<=this.totalPages){
+            if((pageNumber>0 && pageNumber<=this.totalPages)||this.totalPages==0){
                 $http.get(url).then(resp => {
                     this.products = resp.data.content
                     this.totalElements = resp.data.totalElements
                     this.currentPage = pageNumber
                     this.totalPages = resp.data.totalPages
+                }).catch(error=>{
+                    console.log(error)
                 })
             }
         },
@@ -268,23 +305,26 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 this.clear();
                 $("#modal-checkout").modal("hide")
                 $scope.cart.printBill(resp.data.pathFile)
+                $scope.voucher.voucherPrice=0
                 $scope.voucher.clearVoucher();
                 $scope.voucher.voucherCode = "";
-                $scope.order = {
-                    createDate: new Date(),
-                    address: "",
-                    phone: "",
-                    status: 0,
-                    intent: 'Sale',
-                    method: 'Trả trực tiếp',
-                    currency: 'VND',
-                    description: '',
-                    voucher_price: 0,
-                    money_give: 0,
-                    money_send: 0,
-                    price: 0,
-                    account: {username: ""}
-                }
+                $scope.order.money_give = 0
+                $scope.order.money_send = 0
+                // $scope.order = {
+                //     createDate: new Date(),
+                //     address: "",
+                //     phone: "",
+                //     status: 0,
+                //     intent: 'Sale',
+                //     method: 'Trả trực tiếp',
+                //     currency: 'VND',
+                //     description: '',
+                //     voucher_price: 0,
+                //     money_give: 0,
+                //     money_send: 0,
+                //     price: 0,
+                //     account: {username: ""}
+                // }
                // window.location.reload();
             }).catch(error => {
                 if(error?.data){

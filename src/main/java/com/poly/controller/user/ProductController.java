@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.poly.dao.*;
+import com.poly.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.support.PagedListHolder;
 import org.springframework.data.domain.PageRequest;
@@ -20,12 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.poly.dao.FavoriteDao;
-import com.poly.dao.ProductDao;
-import com.poly.dao.VoteDao;
-import com.poly.entity.Favorite;
-import com.poly.entity.Product;
-import com.poly.entity.Vote;
 import com.poly.service.ProductService;
 
 @Controller
@@ -48,6 +44,35 @@ public class ProductController {
 //		return "redirect:/product/list";
 //	}
 
+	@Autowired
+	private ImageProductDao imageProductDao;
+
+	@Autowired
+	private ProductDetailDao productDetailDao;
+
+	public void updateInformationProduct(Product product, ProductDetail detail , List<ImageProduct> images){
+		if(detail!=null){
+			product.setDetail(detail.getDetail());
+			product.setDescription(detail.getDescription());
+			product.setChip(detail.getChip());
+			product.setRam(detail.getRam());
+			product.setRom(detail.getRom());
+			product.setResolution(detail.getResolution());
+			product.setPin(detail.getPin());
+		}
+		for(int i = 0 ; i <images.size();i++){
+			if(i==0) product.setImage1(images.get(0).getPath());
+			if(i==1) product.setImage2(images.get(1).getPath());
+			if(i==2) product.setImage3(images.get(2).getPath());
+			if(i==3) product.setImage4(images.get(3).getPath());
+			if(i==4) product.setImage5(images.get(4).getPath());
+			if(i==5) product.setImage6(images.get(5).getPath());
+			if(i==6) product.setImage7(images.get(6).getPath());
+		}
+
+	}
+
+
 	@GetMapping("/product/list")
 	public String index(Model model, HttpServletRequest request, RedirectAttributes redirect) {
 		request.getSession().setAttribute("productlist", null);
@@ -62,6 +87,13 @@ public class ProductController {
 		int pagesize = 9;
 		List<Product> list = (List<Product>) productService.findAll().stream()
 				.filter(product -> product.getQuantity() > 0)
+				.collect(Collectors.toList()).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
 				.collect(Collectors.toList());
 
 		model.addAttribute("sizepro", list.size());
@@ -93,7 +125,14 @@ public class ProductController {
 	
 	@GetMapping("/product/list/laptop")
 	public String labtop( Model model) {
-		model.addAttribute("items", pdao.findByLaptop());
+		model.addAttribute("items", pdao.findByLaptop().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList()));
 		model.addAttribute("sizepro", pdao.findByLaptop().size());
 		
 		return "user/product/list/laptop";
@@ -102,7 +141,14 @@ public class ProductController {
 	@GetMapping("/product/list/laptop/{pageNumber}")
 	public String labtop( Model model, HttpServletRequest request,
 			@PathVariable int pageNumber) {
-		List<Product> list = pdao.findByLaptop();
+		List<Product> list = pdao.findByLaptop().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		if (list == null) {
 			return "redirect:/product/list";
 		}
@@ -134,6 +180,11 @@ public class ProductController {
 	public String detail(Model model, @PathVariable("id") Integer id) {
 		double vote_arg = 0;
 		Product item = productService.findById(id);
+		if(item!=null){
+			ProductDetail detail = productDetailDao.findByProductID(item.getProduct_id());
+			List<ImageProduct> images = imageProductDao.findByProductID(item.getProduct_id());
+			this.updateInformationProduct(item, detail, images);
+		}
 		String username= request.getRemoteUser();
 		List<Vote> VoteList = votedao.findbyProductId(id);
 		if(VoteList.size()!=0) {
@@ -163,6 +214,13 @@ public class ProductController {
 		
 			List<Product> list = pdao.findByDis().stream()
 					.filter(product -> product.getQuantity() > 0)
+					.collect(Collectors.toList()).stream()
+					.map(product -> {
+						ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+						List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+						this.updateInformationProduct(product, detail, images);
+						return  product;
+					})
 					.collect(Collectors.toList());
 			model.addAttribute("items", list);
 			PagedListHolder<?> pages = (PagedListHolder<?>) request.getSession().getAttribute("productlist");
@@ -194,6 +252,13 @@ public class ProductController {
 	
 			List<Product> list = pdao.findByLatest().stream()
 					.filter(product -> product.getQuantity() > 0)
+					.collect(Collectors.toList()).stream()
+					.map(product -> {
+						ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+						List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+						this.updateInformationProduct(product, detail, images);
+						return  product;
+					})
 					.collect(Collectors.toList());
 			model.addAttribute("items", list);
 		
@@ -206,9 +271,15 @@ public class ProductController {
 		
 			List<Product> list = pdao.findBySpecial().stream()
 					.filter(product -> product.getQuantity() > 0)
+					.collect(Collectors.toList()).stream()
+					.map(product -> {
+						ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+						List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+						this.updateInformationProduct(product, detail, images);
+						return  product;
+					})
 					.collect(Collectors.toList());
 			model.addAttribute("items", list);
-		
 
 		return "user/product/special";
 	}
@@ -218,7 +289,14 @@ public class ProductController {
 		if (keywords.equals("")) {
 			return "redirect:/product/list";
 		}
-		model.addAttribute("items", productService.findByKeywords(keywords));
+		model.addAttribute("items", productService.findByKeywords(keywords).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList()));
 		return "list";
 	}
 
@@ -228,7 +306,14 @@ public class ProductController {
 		if (keywords.equals("")) {
 			return "redirect:/product/list";
 		}
-		List<Product> list = productService.findByKeywords(keywords);
+		List<Product> list = productService.findByKeywords(keywords).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		if (list == null) {
 			return "redirect:/product/list";
 		}
@@ -258,7 +343,14 @@ public class ProductController {
 
 	@RequestMapping("product/list/find")
 	public String find(Model model) {
-		List<Product> list = pdao.findAll();
+		List<Product> list = pdao.findAll().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		model.addAttribute("items", list);
 		return "list";
 	}
@@ -269,7 +361,14 @@ public class ProductController {
 			@RequestParam("MinPrice") Integer unit_price, @RequestParam("MaxPrice") Integer unit_price1, HttpServletRequest request,
 			@PathVariable int pageNumber) {
 		List<Product> list = pdao.findByAllKeyWord(unit_price, unit_price1, Category_id, Trademark_id,
-				Ram, Rom, Resolution);
+				Ram, Rom, Resolution).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		model.addAttribute("items.pageList", list);
 		
 		model.addAttribute("sizepro", pdao.findByAllKeyWord(unit_price, unit_price1, Category_id, Trademark_id,
@@ -304,7 +403,14 @@ public class ProductController {
 		if (tid.equals("")) {
 			return "redirect:/product/list";
 		}
-		model.addAttribute("items", productService.findByTrademarkId(tid));
+		model.addAttribute("items", productService.findByTrademarkId(tid).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList()));
 		model.addAttribute("sizepro", productService.findByTrademarkId(tid).size());
 		
 		return "list";
@@ -316,7 +422,14 @@ public class ProductController {
 		if (tid.equals("")) {
 			return "redirect:/product/list";
 		}
-		List<Product> list = productService.findByTrademarkId(tid);
+		List<Product> list = productService.findByTrademarkId(tid).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		if (list == null) {
 			return "redirect:/product/list";
 		}
@@ -347,7 +460,14 @@ public class ProductController {
 	@GetMapping("/product/list/top10/{pageNumber}")
 	public String getTop10(Model model, HttpServletRequest request, @PathVariable int pageNumber) {
 
-		List<Product> list = pdao.getTop10();
+		List<Product> list = pdao.getTop10().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		if (list == null) {
 			return "redirect:/product/list";
 		}
@@ -376,7 +496,14 @@ public class ProductController {
 	
 	@GetMapping("/product/list/desc/{pageNumber}")
 	public String getDesc(Model model, HttpServletRequest request, @PathVariable int pageNumber) {
-		List<Product> list = pdao.getDesc();
+		List<Product> list = pdao.getDesc().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		model.addAttribute("sizepro", pdao.getDesc().size());
 		if (list == null) {
 			return "redirect:/product/list";
@@ -407,7 +534,14 @@ public class ProductController {
 	
 	@GetMapping("/product/list/asc/{pageNumber}")
 	public String getAsc(Model model, HttpServletRequest request, @PathVariable int pageNumber) {
-		List<Product> list = pdao.getAsc();
+		List<Product> list = pdao.getAsc().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
 		model.addAttribute("sizepro", pdao.getAsc().size());
 		if (list == null) {
 			return "redirect:/product/list";

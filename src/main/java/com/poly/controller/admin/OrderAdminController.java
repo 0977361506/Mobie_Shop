@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.poly.service.OrderDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.support.PagedListHolder;
 import org.springframework.data.repository.query.Param;
@@ -35,6 +36,8 @@ public class OrderAdminController {
 
 	@Autowired
 	OrderDetailDao otddao;
+    @Autowired
+	OrderDetailService service;
 
 	@Autowired
 	ProductDao prodao;
@@ -200,7 +203,8 @@ public class OrderAdminController {
 	public String orderDetail(Model model, @RequestParam("order_id") Integer order_id) {
 
 		Order ListOrder = odao.findById(order_id).get();
-		List<OrderDetail> ListOrderDetail = otddao.findByOrderID(order_id);
+		List<OrderDetail> ListOrderDetail = service.findByOrderID(order_id);
+
 		model.addAttribute("ord", ListOrder);
 		model.addAttribute("odetail", ListOrderDetail);
 		model.addAttribute("message", "Thao tác thành công");

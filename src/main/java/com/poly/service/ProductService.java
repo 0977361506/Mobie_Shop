@@ -9,6 +9,7 @@ import com.poly.entity.OrderDetail;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.poly.entity.Product;
@@ -19,6 +20,12 @@ public interface ProductService {
 	List<Product> findByLaptop();
 	List<Product> findAll();
 
+	List<Product> finbyIdOrName( String keywords);
+
+	List<Product> findByAllKeyWordAdmin(Integer unit_price, Integer unit_price1   ,
+										String Category_id ,String Trademark_id ,
+										String Status , String Chip , String Ram ,
+										 String Rom , String Resolution);
 
 	Product findById(Integer id);
 

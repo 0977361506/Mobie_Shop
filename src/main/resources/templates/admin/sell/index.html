@@ -81,7 +81,7 @@
             <div class="list-items p-3" style="overflow-y: auto;max-height: 500px;margin-top: 11px;">
                 <div class="row">
                     <div  ng-repeat="item in cart.products" class="col-md-3 element-item ">
-                        <div class="d-flex w-100 " ng-click="cart.add(item.product_id)">
+                        <div class="d-flex w-100 " ng-click="cart.add(item.product_id)" >
                             <div class="item-img w-50 ">
                                 <img
                                         src="/assets/images/{{item.image1}}"
@@ -90,7 +90,8 @@
                             </div>
                             <div class="infor-item w-70 ">
                                 <h5 class="item-name" style="margin: 0px">{{item.name}}</h5>
-                                <div class="item-quantity">x {{item.quantity}}</div>
+                                <input value="{{item.quantity}"  id="item_quantity" type="hidden" />
+                                <div class="item-quantity" id="item_{{item.product_id}}">x {{item.quantity}}</div>
                                 <div class="item-price">{{cart.formatVND(item.unit_price)}}</div>
                             </div>
                         </div>

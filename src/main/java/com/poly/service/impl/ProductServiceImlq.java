@@ -7,11 +7,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import javax.persistence.Transient;
 import javax.servlet.http.HttpServletRequest;
 
+import com.poly.dao.*;
 import com.poly.dtos.ProductEnoughQuantityDTO;
+import com.poly.entity.ImageProduct;
 import com.poly.entity.OrderDetail;
+import com.poly.entity.ProductDetail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -22,9 +27,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.poly.dao.AccountDao;
-import com.poly.dao.AuthorityDao;
-import com.poly.dao.ProductDao;
 import com.poly.entity.Product;
 import com.poly.service.AccountService;
 import com.poly.service.AuthorityService;
@@ -36,18 +38,110 @@ import com.poly.service.ProductService;
 public class ProductServiceImlq implements ProductService {
 	@Autowired
 	private ProductDao pdao;
+
+	@Autowired
+	private ImageProductDao imageProductDao;
+
+	@Autowired
+	private ProductDetailDao productDetailDao;
+
 	@Autowired
 	HttpServletRequest request;
+
+	@Transient
+	String Detail ;
+	@Transient
+	String Description;
+	@Transient
+	String Chip;
+	@Transient
+	String Ram;
+	@Transient
+	String Rom;
+	@Transient
+	String Resolution;
+	@Transient
+	String Pin;
+
+	public void updateInformationProduct(Product product, ProductDetail detail , List<ImageProduct> images){
+		if(detail!=null){
+			product.setDetail(detail.getDetail());
+			product.setDescription(detail.getDescription());
+			product.setChip(detail.getChip());
+			product.setRam(detail.getRam());
+			product.setRom(detail.getRom());
+			product.setResolution(detail.getResolution());
+			product.setPin(detail.getPin());
+		}
+		for(int i = 0 ; i <images.size();i++){
+			if(i==0) product.setImage1(images.get(0).getPath());
+			if(i==1) product.setImage2(images.get(1).getPath());
+			if(i==2) product.setImage3(images.get(2).getPath());
+			if(i==3) product.setImage4(images.get(3).getPath());
+			if(i==4) product.setImage5(images.get(4).getPath());
+			if(i==5) product.setImage6(images.get(5).getPath());
+			if(i==6) product.setImage7(images.get(6).getPath());
+		}
+
+	}
+
 	@Override
 	public List<Product> findAll() {
-		
-		return pdao.findAll();
+		List<Product> updatedProducts = pdao.findAll().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
+		return updatedProducts;
+	}
+
+	@Override
+	public List<Product> finbyIdOrName(String keywords) {
+		List<Product> updatedProducts = pdao.finbyIdOrName(keywords).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
+		return updatedProducts;
+	}
+
+	@Override
+	public List<Product> findByAllKeyWordAdmin(Integer unit_price, Integer unit_price1, String Category_id, String Trademark_id, String Status, String Chip, String Ram, String Rom, String Resolution) {
+//		return pdao.findByAllKeyWordAdmin( unit_price, unit_price1   ,
+//				Category_id ,Trademark_id ,
+//				Status , Chip ,  Ram ,
+//				 Rom , Resolution);
+
+		List<Product> updatedProducts = pdao.findByAllKeyWordAdmin( unit_price, unit_price1,
+				Category_id ,Trademark_id ,
+				Status , Chip ,  Ram ,
+				Rom , Resolution).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
+		return updatedProducts;
 	}
 
 	@Override
 	public Product findById(Integer id) {
 		
-		return pdao.findById(id).get();
+		Product product =  pdao.findById(id).get();
+		if(product!=null){
+			ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+			List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+			this.updateInformationProduct(product, detail, images);
+		}
+		return product;
 	}
 
 	@Override
@@ -59,7 +153,18 @@ public class ProductServiceImlq implements ProductService {
 	@Override
 	public List<Product> findByCategoryId(Integer cid) {
 		// TODO Auto-generated method stub
-		return pdao.findByCategoryId(cid);
+	//	return pdao.findByCategoryId(cid);
+
+		List<Product> updatedProducts = pdao.findByCategoryId(cid).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
+		return updatedProducts;
+
 	}
 
 	@Override
@@ -89,19 +194,50 @@ public class ProductServiceImlq implements ProductService {
 	@Override
 	public List<Product> findByKeywords(String keywords) {
 		// TODO Auto-generated method stub
-		return pdao.findByKeywords(keywords);
+	//	return pdao.findByKeywords(keywords);
+
+		List<Product> updatedProducts = pdao.findByKeywords(keywords).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
+		return updatedProducts;
+
 	}
 
 	@Override
 	public List<Product> findByTrademarkId(Integer integer) {
 		// TODO Auto-generated method stub
-		return pdao.findByTrademarkId(integer);
+		//return pdao.findByTrademarkId(integer);
+
+		List<Product> updatedProducts = pdao.findByTrademarkId(integer).stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
+		return updatedProducts;
 	}
 
 	@Override
 	public List<Product> findByLaptop() {
 		// TODO Auto-generated method stub
-		return pdao.findByLaptop();
+	//	return pdao.findByLaptop();
+
+		List<Product> updatedProducts = pdao.findByLaptop().stream()
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return  product;
+				})
+				.collect(Collectors.toList());
+		return updatedProducts;
 	}
 	@Override
 	public File save(MultipartFile file, String path) throws IOException {
@@ -150,7 +286,14 @@ public class ProductServiceImlq implements ProductService {
 			combinedSpecification = combinedSpecification.and(hasName);
 		}
 
-		return pdao.findAll(combinedSpecification, pageable);
+		Page<Product> updatedProducts = pdao.findAll(combinedSpecification, pageable)
+				.map(product -> {
+					ProductDetail detail = productDetailDao.findByProductID(product.getProduct_id());
+					List<ImageProduct> images = imageProductDao.findByProductID(product.getProduct_id());
+					this.updateInformationProduct(product, detail, images);
+					return product;
+				});
+		return updatedProducts;
 
 
 	}

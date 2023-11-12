@@ -5,6 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.poly.dtos.BillDTO;
 import com.poly.entity.Order;
+import com.poly.entity.OrderDetail;
 
 public interface OrderService {
 
@@ -22,4 +23,6 @@ public interface OrderService {
 	void deleteById(Integer id);
 
 	Order update(Order order);
+
+
 }

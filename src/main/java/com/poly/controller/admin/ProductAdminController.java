@@ -6,14 +6,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 
+import com.poly.entity.*;
+import com.poly.service.ImageProductService;
+import com.poly.service.ProductDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.support.PagedListHolder;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,10 +35,6 @@ import com.poly.dao.AccountDao;
 import com.poly.dao.CategoryDao;
 import com.poly.dao.ProductDao;
 import com.poly.dao.TrademarkDao;
-import com.poly.entity.Account;
-import com.poly.entity.Category;
-import com.poly.entity.Product;
-import com.poly.entity.Trademark;
 import com.poly.service.AccountService;
 import com.poly.service.ProductService;
 
@@ -49,6 +51,11 @@ public class ProductAdminController {
 
 	@Autowired
 	TrademarkDao tradao;
+
+	@Autowired
+	ProductDetailService productDetailService;
+	@Autowired
+	ImageProductService imageProductService;
 
 //	@RequestMapping({"/"})
 //	public String home() { 
@@ -100,7 +107,8 @@ public class ProductAdminController {
 		if (keyword.equals("")) {
 			return "redirect:/admin/product/list";
 		}
-		model.addAttribute("items", dao.finbyIdOrName(keyword));
+
+		model.addAttribute("items", proservice.finbyIdOrName(keyword));
 		model.addAttribute("message", "Tìm kiếm thành công");
 		return "list";
 	}
@@ -111,7 +119,7 @@ public class ProductAdminController {
 		if (keyword.equals("")) {
 			return "redirect:/admin/product/list";
 		}
-		List<Product> list = dao.finbyIdOrName(keyword);
+		List<Product> list = proservice.finbyIdOrName(keyword);
 
 		if (list == null) {
 			return "redirect:/admin/product/list";
@@ -155,7 +163,7 @@ public class ProductAdminController {
 			@RequestParam("Resolution") String Resolution, @RequestParam("MinPrice") Integer unit_price,
 			@RequestParam("MaxPrice") Integer unit_price1, HttpServletRequest request, @PathVariable int pageNumber) {
 
-		List<Product> list = dao.findByAllKeyWordAdmin(unit_price, unit_price1, Category_id, Trademark_id, Status, Chip,
+		List<Product> list = proservice.findByAllKeyWordAdmin(unit_price, unit_price1, Category_id, Trademark_id, Status, Chip,
 				Ram, Rom, Resolution);
 		model.addAttribute("items.pageList", list);
 		model.addAttribute("sizepro", list.size());
@@ -220,7 +228,7 @@ public class ProductAdminController {
 	@RequestMapping("/admin/product/edit")
 	public String edit(Model model, @RequestParam("product_id") Integer product_id) {
 		try {
-			Product pro = dao.findById(product_id).get();
+			Product pro = proservice.findById(product_id);
 //			List<Category> cateList = catedao.findAll();
 //			List<Trademark> tradeList = tradao.findAll();
 			model.addAttribute("pro", pro);
@@ -251,6 +259,8 @@ public class ProductAdminController {
 	@PostMapping("/admin/product/create")
 	public String create(Product pro, Model model, @RequestParam("photo_img") MultipartFile[] file) throws IOException {
 		model.addAttribute("pro", pro);
+		List<ImageProduct> images = new ArrayList<>();
+		ImageProduct imageProduct = null;
 		if (file != null) {
 			for (int i = 0; i < file.length; i++) {
 				if (i == 0) {
@@ -259,42 +269,81 @@ public class ProductAdminController {
 					} else {
 						File saveFile = proservice.save(file[i], "/assets/images");
 						pro.setImage1(file[i].getOriginalFilename());
+						imageProduct = new ImageProduct();
+						imageProduct.setPath(file[i].getOriginalFilename());
+						images.add(imageProduct);
 					}
 				}
 				;
 				if (i == 1) {
 					File saveFile = proservice.save(file[i], "/assets/images");
 					pro.setImage2(file[i].getOriginalFilename());
+					imageProduct = new ImageProduct();
+					imageProduct.setPath(file[i].getOriginalFilename());
+					images.add(imageProduct);
 				}
 				;
 				if (i == 2) {
 					File saveFile = proservice.save(file[i], "/assets/images");
 					pro.setImage3(file[i].getOriginalFilename());
+					imageProduct = new ImageProduct();
+					imageProduct.setPath(file[i].getOriginalFilename());
+					images.add(imageProduct);
 				}
 				;
 				if (i == 3) {
 					File saveFile = proservice.save(file[i], "/assets/images");
 					pro.setImage4(file[i].getOriginalFilename());
+					imageProduct = new ImageProduct();
+					imageProduct.setPath(file[i].getOriginalFilename());
+					images.add(imageProduct);
 				}
 				;
 				if (i == 4) {
 					File saveFile = proservice.save(file[i], "/assets/images");
 					pro.setImage5(file[i].getOriginalFilename());
+					imageProduct = new ImageProduct();
+					imageProduct.setPath(file[i].getOriginalFilename());
+					images.add(imageProduct);
 				}
 				;
 				if (i == 5) {
 					File saveFile = proservice.save(file[i], "/assets/images");
 					pro.setImage6(file[i].getOriginalFilename());
+					imageProduct = new ImageProduct();
+					imageProduct.setPath(file[i].getOriginalFilename());
+					images.add(imageProduct);
 				}
 				;
 				if (i == 6) {
 					File saveFile = proservice.save(file[i], "/assets/images");
 					pro.setImage7(file[i].getOriginalFilename());
+					imageProduct = new ImageProduct();
+					imageProduct.setPath(file[i].getOriginalFilename());
+					images.add(imageProduct);
 				}
 				;
 			}
 			pro.setProduct_date(new Date());
-			dao.save(pro);
+			Product productNew = dao.save(pro);
+			images.stream()
+					.map(image -> {
+						image.setProductID(productNew.getProduct_id());
+						return image;
+					})
+					.collect(Collectors.toList());
+			ProductDetail productDetail = new ProductDetail();
+			productDetail.setProductID(productNew.getProduct_id());
+			productDetail.setDetail(pro.getDetail());
+			productDetail.setChip(pro.getChip());
+			productDetail.setDescription(pro.getDescription());
+			productDetail.setPin(pro.getPin());
+			productDetail.setResolution(pro.getResolution());
+			productDetail.setRam(pro.getRam());
+			productDetail.setRom(pro.getRom());
+
+            imageProductService.saveAll(images);
+            productDetailService.create(productDetail);
 			model.addAttribute("message", "Thêm mới thành công");
 			return "redirect:/admin/product/edit?product_id=" + pro.getProduct_id();
 		} else {
@@ -330,6 +379,8 @@ public class ProductAdminController {
 	@RequestMapping("/admin/product/update")
 	public String update(Product pro, Model model, @RequestParam("photo_img") MultipartFile[] file) throws IOException {
 		model.addAttribute("pro", pro);
+		List<ImageProduct> images = new ArrayList<>();
+		ImageProduct imageProduct = null;
 		if (dao.existsById(pro.getProduct_id())) {
 			if (file != null) {
 				for (int i = 0; i < file.length; i++) {
@@ -339,44 +390,85 @@ public class ProductAdminController {
 						} else {
 							File saveFile = proservice.save(file[i], "/assets/images");
 							pro.setImage1(file[i].getOriginalFilename());
+							imageProduct = new ImageProduct();
+							imageProduct.setPath(file[i].getOriginalFilename());
+							images.add(imageProduct);
 						}
 					}
 					;
 					if (i == 1) {
 						File saveFile = proservice.save(file[i], "/assets/images");
 						pro.setImage2(file[i].getOriginalFilename());
+						imageProduct = new ImageProduct();
+						imageProduct.setPath(file[i].getOriginalFilename());
+						images.add(imageProduct);
 					}
 					;
 					if (i == 2) {
 						File saveFile = proservice.save(file[i], "/assets/images");
 						pro.setImage3(file[i].getOriginalFilename());
+						imageProduct = new ImageProduct();
+						imageProduct.setPath(file[i].getOriginalFilename());
+						images.add(imageProduct);
 					}
 					;
 					if (i == 3) {
 						File saveFile = proservice.save(file[i], "/assets/images");
 						pro.setImage4(file[i].getOriginalFilename());
+						imageProduct = new ImageProduct();
+						imageProduct.setPath(file[i].getOriginalFilename());
+						images.add(imageProduct);
 					}
 					;
 					if (i == 4) {
 						File saveFile = proservice.save(file[i], "/assets/images");
 						pro.setImage5(file[i].getOriginalFilename());
+						imageProduct = new ImageProduct();
+						imageProduct.setPath(file[i].getOriginalFilename());
+						images.add(imageProduct);
 					}
 					;
 					if (i == 5) {
 						File saveFile = proservice.save(file[i], "/assets/images");
 						pro.setImage6(file[i].getOriginalFilename());
+						imageProduct = new ImageProduct();
+						imageProduct.setPath(file[i].getOriginalFilename());
+						images.add(imageProduct);
 					}
 					;
 					if (i == 6) {
 						File saveFile = proservice.save(file[i], "/assets/images");
 						pro.setImage7(file[i].getOriginalFilename());
+						imageProduct = new ImageProduct();
+						imageProduct.setPath(file[i].getOriginalFilename());
+						images.add(imageProduct);
 					}
 					;
 				}
 //			File saveFile1 = proservice.save(file1 , "/assets/images");
 //			String filename1 = file1.getOriginalFilename();
 				pro.setProduct_date(new Date());
-				dao.save(pro);
+				Product productNew = dao.save(pro);
+				images.stream()
+						.map(image -> {
+							image.setProductID(productNew.getProduct_id());
+							return image;
+						})
+						.collect(Collectors.toList());
+				ProductDetail old = productDetailService.findByProductID(productNew.getProduct_id());
+				ProductDetail productDetail = new ProductDetail();
+				productDetail.setID(old.getID());
+				productDetail.setProductID(productNew.getProduct_id());
+				productDetail.setDetail(pro.getDetail());
+				productDetail.setChip(pro.getChip());
+				productDetail.setDescription(pro.getDescription());
+				productDetail.setPin(pro.getPin());
+				productDetail.setResolution(pro.getResolution());
+				productDetail.setRam(pro.getRam());
+				productDetail.setRom(pro.getRom());
+				imageProductService.update(images,productNew.getProduct_id());
+				productDetailService.create(productDetail);
+
 				model.addAttribute("message", "Cập nhập thành công");
 				return "redirect:/admin/product/edit?product_id=" + pro.getProduct_id();
 			} else {
@@ -391,8 +483,12 @@ public class ProductAdminController {
 	}
 
 	@RequestMapping("/admin/product/delete/form/{id}")
+	@Transactional
+	@Modifying
 	public String deleteform(Model model, @PathVariable("id") Integer id) {
 		try {
+			imageProductService.deleteByProductID(id);
+			productDetailService.deleteByProductID(id);
 			dao.deleteById(id);
 			model.addAttribute("message", "Xoá thành công");
 			return "redirect:/admin/product/detail";

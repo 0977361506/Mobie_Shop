@@ -71,8 +71,13 @@ public interface ProductDao extends JpaRepository<Product, Integer>, JpaSpecific
 		List<Product> find(@Param("MinPrice") Integer unit_price, @Param("MaxPrice") Integer unit_price1 ,
 				@Param("Resolution") String resolution, @Param("Ram") String ram, @Param("Rom") String rom);
 	
-		@Query(value="select * from Products where Unit_price between ?1 and ?2 and Category_id like %?3% and Trademark_id like %?4% "
-				+ "and Ram like %?5% and Rom like %?6% and Resolution like  %?7% ", nativeQuery = true)
+//		@Query(value="select * from Products where Unit_price between ?1 and ?2 and Category_id like %?3% and Trademark_id like %?4% "
+//				+ "and Ram like %?5% and Rom like %?6% and Resolution like  %?7% ", nativeQuery = true)
+
+		@Query(value="select * from Products INNER JOIN product_detail on Products.Product_id = product_detail.ProductID " +
+				" where Products.Unit_price between ?1 and ?2 and Products.Category_id  like %?3% and Products.Trademark_id like %?4% " +
+				"  product_detail.Ram like %?5% " +
+				"   and product_detail.Rom like %?6% and product_detail.Resolution like  %?7% ", nativeQuery = true)
 		List<Product> findByAllKeyWord(
 				@Param("MinPrice") Integer unit_price, @Param("MaxPrice") Integer unit_price1   ,
 					@Param("Category_id") String Category_id , @Param("Trademark_id") String Trademark_id , @Param("Ram") String Ram , 
@@ -83,8 +88,12 @@ public interface ProductDao extends JpaRepository<Product, Integer>, JpaSpecific
 		@Query(value = "select * from Products where Product_id like %:kw% or \r\n"
 				+ " Name like %:kw%  " , nativeQuery = true)
 		List<Product> finbyIdOrName(@Param("kw") String keywords);
-		@Query(value="select * from Products where Unit_price between ?1 and ?2 and Category_id like %?3% and Trademark_id like %?4% "
-				+ "and  Status like %?5% and Chip like %?6%  and Ram like %?7% and Rom like %?8% and Resolution like  %?9% ", nativeQuery = true)
+//		@Query(value="select * from Products where Unit_price between ?1 and ?2 and Category_id like %?3% and Trademark_id like %?4% "
+//				+ "and  Status like %?5% and Chip like %?6%  and Ram like %?7% and Rom like %?8% and Resolution like  %?9% ", nativeQuery = true)
+		@Query(value="select * from Products INNER JOIN product_detail on Products.Product_id = product_detail.ProductID " +
+				" where Products.Unit_price between ?1 and ?2 and Products.Category_id  like %?3% and Products.Trademark_id like %?4% " +
+				"   and  Products.Status like %?5% and product_detail.Chip like %?6%  and product_detail.Ram like %?7% " +
+				"   and product_detail.Rom like %?8% and product_detail.Resolution like  %?9% ", nativeQuery = true)
 		List<Product> findByAllKeyWordAdmin(@Param("MinPrice") Integer unit_price, @Param("MaxPrice") Integer unit_price1   ,
 				@Param("Category_id") String Category_id , @Param("Trademark_id") String Trademark_id , 
 				@Param("Status") String Status ,  @Param("Chip") String Chip , @Param("Ram") String Ram , 
