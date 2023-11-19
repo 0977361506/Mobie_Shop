@@ -21,4 +21,7 @@ public interface OrderDetailDao extends JpaRepository<OrderDetail, Integer>{
 	@Modifying
 	@Query(value="delete  from OrderDetails where Order_id = :order_id" ,nativeQuery = true)
 	void deleteOrderId(@Param("order_id") Integer order_id);
+
+	@Query(value="select *  from OrderDetails where Order_id = :order_id" ,nativeQuery = true)
+	List<OrderDetail> findByOrder(@Param("order_id") Integer idOrder);
 }

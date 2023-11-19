@@ -35,7 +35,7 @@
                 </table>
             </div>
             <div class="cart-left-footer" style="margin-top: 35px">
-                <div class="clearfix">
+                <div class="clearfix" style=" height: 76px;">
                     <div class="cart-note pull-left">
                         <div class="note-container">
                             <span class="glyphicon glyphicon-pencil" style="left: 10px !important;
@@ -48,8 +48,8 @@
                                     ng-model-options="{ debounce: 500 }"
                                     ng-change="voucher.saveVoucherCode()"
                             />
-                            <span  ng-if="voucher.isValid == 1" class="glyphicon glyphicon-ok code-success"> </span>
-                            <span  ng-if="voucher.isValid == 2" class="	glyphicon glyphicon-remove code-error"> </span>
+                            <span  ng-if="voucher.isValid == 1" class="glyphicon glyphicon-ok code-success"></span>
+                            <span  ng-if="voucher.isValid == 2" class=" code-errorss" style="color: red">{{ voucher.errorMessage }} </span>
 <!--                            <div ng-if="voucher.errorMessage !== ''" class="error-message">{{ voucher.errorMessage }}</div>-->
                         </div>
                     </div>
@@ -64,19 +64,45 @@
         </div>
 
         <div class="cart-right col col-sm-7" style="width: 44%;margin-left: 10px;">
-            <div class="cart-search">
-                <form>
-                    <div class="search-container">
-                        <input
-                                type="text"
-                                class="search-item form-control"
-                                placeholder="Nhập tên sản phẩm..."
-                                ng-model="cart.keySearch"
-                                ng-keypress="cart.searchProduct($event)"
-                        />
-                        <span class="search-icon"><i class="fa fa-search"></i></span>
-                    </div>
-                </form>
+            <div class="d-flex flex">
+                <div class="cart-search" style="width: 92%">
+                    <form>
+                        <div class="search-container">
+                            <input
+                                    type="text"
+                                    class="search-item form-control search-boxs"
+                                    placeholder="Nhập tên sản phẩm..."
+                                    ng-model="cart.keySearch"
+                                    ng-keypress="cart.searchProduct($event)"
+                            />
+                            <span class="search-icon"><i class="fa fa-search"></i></span>
+                        </div>
+                    </form>
+                </div>
+               <div style="margin-left: 10px">
+                   <div class="dropdown">
+                       <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                           <i class="fa fa-plus-circle" aria-hidden="true"></i>
+                       </button>
+                       <div class="dropdown-menu" style=" left: -111px !important;padding: 0;">
+                           <ul class="list-group" style="    margin: 0px !important;">
+                               <li class="list-group-item">
+                                   <div class="d-flex" ng-click="order.purchaseWithStatus()">
+                                       <i class="fa fa-plus mr-2" aria-hidden="true" style="margin: 6px 6px 0px 0px;"> </i>
+                                       <a href="#">Tạo đơn mới</a>
+                                   </div>
+                               </li>
+                               <li class="list-group-item" ng-click="order.showOrderPending()">
+                                   <div class="d-flex">
+                                       <i class="fa fa-list" aria-hidden="true" style="margin: 6px 6px 0px 0px;"></i>
+                                       <a href="#">Đơn chưa thanh toán</a>
+                                   </div>
+                               </li>
+
+                           </ul>
+                       </div>
+                   </div>
+                </div>
             </div>
             <div class="list-items p-3" style="overflow-y: auto;max-height: 500px;margin-top: 11px;">
                 <div class="row">
@@ -98,7 +124,7 @@
                     </div>
                 </div>
             </div>
-            <div class="cart-right-footer">
+            <div class="cart-right-footer" style="    padding-bottom: 22px !important;">
                 <div class="clearfix">
                     <div class="pagination-items pull-left">
                         <ul class="list-pagination pagination-sm ">
@@ -222,7 +248,137 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="modal-order-pending-detail">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 style="text-align: center">Thông tin đặt hàng</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="panel-primary">
+                        <div class="panel-body-dh">
+                            <div class="row">
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Người mua</div>
+                                    <input ng-model="orderPendingDetail.account.username" class="form-control" required>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Ngày đặt hàng</div>
+                                    <div class="form-control" readonly>{{orderPendingDetail.createDate | date : 'dd-MM-yyyy HH:mm'}}</div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Số điện thoại</div>
+                                    <input ng-model="orderPendingDetail.phone" class="form-control">
+                                </div>
+
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Tổng tiền</div>
+                                    <div class="form-control" readonly> {{  cart.formatVND(orderPendingDetail.price+orderPendingDetail.voucher_price) }}</div>
+                                </div>
+
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Tiền nhận từ khách</div>
+                                    <input ng-model="orderPendingDetail.money_give" class="form-control" type="number"
+                                           ng-model-options="{ debounce: 500 }"
+                                           ng-change="orderPendingDetail.caculatorMoneySendOfOrderPending()">
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Tiền trả lại khách</div>
+                                    <div class="form-control" readonly> {{ cart.formatVND(orderPendingDetail.money_send) }}</div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Mã giảm giá</div>
+                                    <div class="form-control" readonly> {{ cart.formatVND(orderPendingDetail.voucher_price) }}</div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Tổng tiền cần phải trả</div>
+                                    <div class="form-control" readonly> {{ cart.formatVND(orderPendingDetail.price) }}</div>
+                                </div>
+                                <div class="form-group col-sm-6">
+                                    <div class="thongtin">Ghi chú</div>
+                                    <input ng-model="orderPendingDetail.description" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group col-sm-12">
+                                    <div class="thongtin">Địa chỉ giao hàng</div>
+                                    <textarea ng-model="orderPendingDetail.address"  class="form-control"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                                class="panel-footer panel-footer"
+                        >
+                            <div class="clearfix">
+                                <div class="pull-left">
+                                    <button
+                                            type="button"
+                                            class="btn btn-primary"
+
+                                            ng-click="orderPendingDetail.purchaseOrderPending()"
+                                    >
+                                        Thanh toán
+                                    </button>
+                                </div>
+                                <div class="pull-right">
+                                    <button
+                                            type="button"
+                                            class="btn btn-danger"
+                                            data-dismiss="modal"
+                                    >
+                                        Hủy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modal-order-pending">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 style="text-align: center">Danh sách đơn hàng chưa thanh toán</h2>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-hover" id="orders-list-pending">
+                    <thead>
+                    <tr>
+                        <th>Mã đơn hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Ngày đặt</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="item in orderPending">
+                            <td>{{item.order_id}}</td>
+                            <td>{{cart.formatVND(item.price+item.voucher_price)}}</td>
+                            <td>{{item.createDate | date:'dd/MM/yyyy HH:mm'}}</td>
+                            <td> {{item.status == 5 ? 'Chưa thanh toán' : item.status}}</td>
+                            <td class="text-center">
+                                <a ng-click="order.viewDetailOrderPending(item.order_id)">
+                                    <button class="btn btn-primary">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
+                                </a>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
 </main>
 
 </body>
+
 </html>

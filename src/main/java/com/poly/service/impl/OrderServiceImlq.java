@@ -73,6 +73,44 @@ public class OrderServiceImlq implements OrderService {
 
 	@Override
 	@Transactional
+	public Order createBillSellPending(BillDTO billDTO,String code) throws Throwable {
+		Account account = new Account();
+		VoucherDetail voucherDetail = new VoucherDetail();
+		var order = billDTO.getOrder();
+		UUID randomUUID = UUID.randomUUID();
+		var fullname = order.getAccount().getUsername()!=null
+				?order.getAccount().getUsername()+"_"+randomUUID:"Anonymous"+"_"+randomUUID;
+		account.setUsername("Anonymous");
+		account.setFullname(fullname);
+		account.setActive(false);
+		Account newAccount = accountDao.save(account);
+		order.setAccount(newAccount);
+		order.setStatus(5);
+		Voucher voucher = null;
+		if(!code.equals("")){
+			voucher = voucherDao.findByVoucherName(code);
+			if(Objects.isNull(voucher)) throw  new Exception("Voucher not found!");
+			else {
+				order.setPrice(order.getPrice()-voucher.getVoucher_price());
+				voucherDetail.setVoucher_id(voucher.getVoucher_id());
+			}
+		}
+		var errors = productService.checkQuantityEnough(billDTO.getOrderDetails());
+		if(errors.getErrors().size()>0){
+			ObjectMapper objectMapper = new ObjectMapper();
+			String error = objectMapper.writeValueAsString(errors.getErrors());
+			throw  new QuantityNotEnoughException(error);
+		}
+		productService.saveAll(errors.getProducts());
+		var newOrder = dao.save(order);
+		if(Objects.nonNull(voucher)) voucherDetail.setOrder_id(newOrder.getOrder_id());
+		List<OrderDetail> details = billDTO.getOrderDetails();
+		ddao.saveAll(details);
+		return newOrder;
+	}
+
+	@Override
+	@Transactional
 	public Order createBillSell(BillDTO billDTO,String code) throws Throwable {
 		Account account = new Account();
 		VoucherDetail voucherDetail = new VoucherDetail();
@@ -135,7 +173,19 @@ public class OrderServiceImlq implements OrderService {
 		// TODO Auto-generated method stub
 		return dao.save(order);
 	}
-	
 
-	
+	@Override
+	public List<Order> findByStatus(int status) {
+		return dao.findByStatusPending(status);
+	}
+
+	@Override
+	public BillDTO getBillDetail(int idOrder) {
+		Order order = dao.findById(idOrder).get();
+		List<OrderDetail> orderDetails = ddao.findByOrder(idOrder);
+		BillDTO billDTO = BillDTO.builder().orderDetails(orderDetails).order(order).build();
+		return billDTO;
+	}
+
+
 }

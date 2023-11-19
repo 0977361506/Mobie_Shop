@@ -17,6 +17,8 @@
   color: green;
 }
 .code-error{
+    right: -159px !important;
+    position: relative !important;
     color: red;
 }
 .element-item{
@@ -56,12 +58,15 @@
 
 .search-item,
 .note-item {
+    max-width: 200px;
     width: 100%;
     padding: 10px 30px;
     border: 1px solid #ccc;
     border-radius: 5px;
 }
-
+.search-boxs{
+    max-width: 100% !important;
+}
 .search-icon {
     position: absolute;
     top: 50%;

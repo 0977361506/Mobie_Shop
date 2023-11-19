@@ -15,5 +15,5 @@ public interface VoucherService {
 
 	Voucher findByVoucherName(String voucherName);
 
-	Integer checkIsvalidVoucher(String code);
+	Integer checkIsvalidVoucher(String code,Double total);
 }

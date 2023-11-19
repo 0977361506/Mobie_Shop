@@ -45,4 +45,7 @@ public class Voucher implements Serializable {
 
     @Column(name = "username")
     String username;
+
+    @Column(name = "estimate")
+    Double estimate;
 }

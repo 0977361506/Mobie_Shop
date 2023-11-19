@@ -8,6 +8,7 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
     $scope.voucher={
         voucherCode : localStorage.getItem('voucher') || '',
         errorMessage :"",
+        estimate:0,
         voucherPrice:0,
         isValid: 1000,
         showMessage(message){
@@ -19,6 +20,9 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
             if(code){
                 $http.get(`/rest/voucher/code?code=`+code).then(resp => {
                     this.voucherPrice = resp.data.voucher_price ;
+                    this.estimate = resp.data.estimate ;
+                    this.saveVoucherCode()
+
                 }).catch(error => {
                     console.log(error)
                 })
@@ -26,20 +30,38 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
 
         },
         saveVoucherCode(){
-            $http.get(`/rest/voucher/vadidate?code=`+$scope.voucher.voucherCode).then(resp => {
+            $http.get(`/rest/voucher/vadidate?code=`+$scope.voucher.voucherCode+"&total="+$scope.cart.amount).then(resp => {
                 const isValidVoucher  =  resp.data;
                 if(isValidVoucher!=1000){ // Voucher không hợp lệ
                     if(isValidVoucher==1001){
                         $scope.voucher.errorMessage = "Voucher không tồn tại."
-                        this.voucherPrice = 0
+                        this.voucherPrice = 0;
+                        this.isValid = 2;
+                        localStorage.setItem("voucher", "");
                     }else if(isValidVoucher==1002){
                         $scope.voucher.errorMessage = "Voucher hết hạn."
-                        this.voucherPrice = 0
-                    }else{
+                        this.voucherPrice = 0;
+                        this.isValid = 2;
+                        localStorage.setItem("voucher", "")
+                    }else if(isValidVoucher==1004){
+                        $scope.voucher.errorMessage = "Hoá đơn chưa đủ điều kiện áp dụng Voucher."
+                        $http.get(`/rest/voucher/code?code=`+this.voucherCode).then(resp => {
+                            this.voucherPrice = 0 ;
+                            this.estimate = resp.data.estimate ;
+                            this.isValid = 2;
+                            // localStorage.setItem("voucher_sell", "")
+                        }).catch(error => {
+                            console.log(error)
+                        })
+                    }
+                    else{
                         $scope.voucher.errorMessage = "Voucher không hợp lệ."
-                        this.voucherPrice = 0
+                        this.voucherPrice = 0;
+                        this.isValid = 2;
+                        localStorage.setItem("voucher", "")
                     }
                 }else{
+                    if (this.voucherCode) this.isValid = 1;
                     $scope.voucher.errorMessage =  ""
                     localStorage.setItem("voucher", this.voucherCode);
                     this.getVoucher(this.voucherCode);
@@ -86,6 +108,8 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
                 return element;
             });
             this.items = updatedArray
+
+            $scope.voucher.saveVoucherCode()
         },
         add(product_id) {
             var item = this.items.find(item => (item.product_id == product_id ));
@@ -102,6 +126,8 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
 
                     this.items.push(resp.data);
                     this.saveToLocalStorage();
+                    $scope.voucher.saveVoucherCode()
+
                 })
             }
         },
@@ -134,11 +160,14 @@ app.controller("shopping-cart-ctrl", function($scope, $http) {
         remove(product_id) {
             var index = this.items.findIndex(item => item.product_id == product_id);
             this.items.splice(index, 1);
+            $scope.voucher.saveVoucherCode()
             this.saveToLocalStorage();
         },
         clear() {
             this.items = [];
             this.saveToLocalStorage();
+            $scope.voucher.saveVoucherCode()
+
         },
         amt_of(item) {},
         get count() {

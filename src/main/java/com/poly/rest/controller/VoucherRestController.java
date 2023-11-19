@@ -21,8 +21,9 @@ public class VoucherRestController {
 	}
 
 	@GetMapping("/vadidate")
-	public Integer vadidateVoucher(@RequestParam("code") String code){
-		return service.checkIsvalidVoucher(code);
+	public Integer vadidateVoucher(@RequestParam("code") String code,
+								   @RequestParam("total") Double total){
+		return service.checkIsvalidVoucher(code,total);
 	}
 	@GetMapping("/{id}")
 	public Voucher getOne(@PathVariable("id")Integer id) {

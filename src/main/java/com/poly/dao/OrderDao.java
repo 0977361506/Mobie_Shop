@@ -28,7 +28,9 @@ public interface OrderDao extends JpaRepository<Order, Integer>{
 	@Query(value="select * from Orders where Order_id like %?1% \r\n"
 			+ " order by Order_id  " ,nativeQuery = true)
 	List<Order> findByOrder_Id(String order_id);
-	
+
+	@Query(value="Select  * from Orders where Orders.Status=5  order by Order_id  ",nativeQuery = true)
+	List<Order> findByStatusPending(Integer status);
 	
 	
 	

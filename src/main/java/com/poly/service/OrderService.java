@@ -13,6 +13,7 @@ public interface OrderService {
 	Order create(JsonNode orderData,String code) throws Throwable;
 
 	Order createBillSell(BillDTO billDTO,String code) throws Throwable;
+	Order createBillSellPending(BillDTO billDTO,String code) throws Throwable;
 
 	Order findById(Integer id);
 
@@ -23,6 +24,6 @@ public interface OrderService {
 	void deleteById(Integer id);
 
 	Order update(Order order);
-
-
+	List<Order> findByStatus(int status);
+    BillDTO getBillDetail(int idOrder);
 }

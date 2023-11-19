@@ -51,7 +51,7 @@ public class VoucherServiceImpl implements VoucherService {
 	}
 
 	@Override
-	public Integer checkIsvalidVoucher(String code) {
+	public Integer checkIsvalidVoucher(String code,Double total) {
 		if(code.equals("undefined") || code.equals("")) return 1000;
 		Voucher voucher= voucherDao.findByVoucherName(code);
 		if(Objects.isNull(voucher)){
@@ -62,6 +62,8 @@ public class VoucherServiceImpl implements VoucherService {
 				return 1002; // Voucher hết hạn
 			}else if(!voucher.isStatus()){
 				return 1003;  // Voucher không hợp lệ
+			}else if(voucher.getEstimate()!=null){
+				if(total<voucher.getEstimate()) return  1004; // Số tiền đơn hàng ko đủ để áp dụng
 			}
 
 			return 1000; // Voucher hợp lệ

@@ -2,10 +2,13 @@ package com.poly.rest.controller;
 
 import java.util.List;
 
+import com.poly.dtos.BillDTO;
 import com.poly.dtos.FileDTO;
+import com.poly.entity.OrderDetail;
 import com.poly.entity.Voucher;
 import com.poly.exceptions.MoneyNotEnoughException;
 import com.poly.mappers.JsonMapper;
+import com.poly.service.OrderDetailService;
 import com.poly.service.ReportService;
 import com.poly.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,10 @@ public class OrderRestController {
 	ReportService reportService;
     @Autowired
 	VoucherService voucherService;
+
+    @Autowired
+	OrderDetailService orderDetailService;
+
 	@GetMapping("/rest/orders")
 	public List<Order> getAll(){
 		return orderService.findByAllDesc();
@@ -35,7 +42,18 @@ public class OrderRestController {
 	public List<Order> getStatus(){
 		return odao.getStatus();
 	}
-	
+
+	@GetMapping("/rest/orders/pending")
+	public List<Order> getAllOrderPending(){
+		return orderService.findByStatus(5);
+	}
+
+	@GetMapping("/rest/orders/pending/{id}")
+	public Order getAllOrderPendingById(@PathVariable("id") int idOrder){
+		return orderService.findById(idOrder);
+	}
+
+
 	@PostMapping("/rest/orders")
 	public Order create(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Throwable {
 		return orderService.create(orderData,code);
@@ -51,7 +69,28 @@ public class OrderRestController {
 		FileDTO fileDTO = new FileDTO(pdfPath);
 		return fileDTO;
 	}
-	
+
+	@PutMapping("/rest/orders/pending/update")
+	public FileDTO updateOrderPendding(@RequestBody Order order) throws Throwable {
+		order.setPrice(order.getPrice()+order.getVoucher_price());
+		var billDTO = BillDTO.builder().order(order).build();
+		List<OrderDetail> orderDetails = orderDetailService.findByOrderID(order.getOrder_id());
+		billDTO.setOrderDetails(orderDetails);
+		if(billDTO.getOrder().getMoney_give()<(billDTO.getOrder().getPrice()-billDTO.getOrder().getVoucher_price()))
+			throw  new MoneyNotEnoughException("Money not enough");
+		String pdfPath= reportService.createPdf(billDTO);
+		orderService.update(order);
+		FileDTO fileDTO = new FileDTO(pdfPath);
+		return fileDTO;
+	}
+
+	@PostMapping("/rest/orders/sell/status")
+	public boolean createOrderOfSellStatusPending(@RequestBody JsonNode orderData,@RequestParam("code") String code) throws Throwable {
+		var billDTO = JsonMapper.convertToBillDTO(orderData);
+		orderService.createBillSellPending(billDTO,code);
+		return true;
+	}
+
 	@PutMapping("/rest/orders/{id}")
 	public Order put(@PathVariable("id")Integer id,@RequestBody Order order) {
 		return  orderService.update(order);

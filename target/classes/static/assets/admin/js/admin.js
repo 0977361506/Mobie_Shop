@@ -2,11 +2,12 @@ const app = angular.module("admin-ctrl", []);
 app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
     $scope.voucher={
         voucherCode : localStorage.getItem('voucher_sell') || '',
+        estimate:0,
         errorMessage :"",
         voucherPrice:0,
         isValid: 0 ,  // = 0 chưa nhập voucher, 1 là nhập đúng, 2 là nhập sai
         showMessage(message){
-            alert(message)
+            // alert(message)
             $scope.voucher.errorMessage=message
             $("#myModal").modal("hide");
         },
@@ -14,7 +15,9 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
             if(code){
                 $http.get(`/rest/voucher/code?code=`+code).then(resp => {
                     this.voucherPrice = resp.data.voucher_price ;
-                    this.isValid = 1;
+                    this.estimate = resp.data.estimate ;
+                    this.saveVoucherCode()
+
                 }).catch(error => {
                     console.log(error)
                 })
@@ -25,24 +28,38 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
 
         },
         saveVoucherCode(){
-            $http.get(`/rest/voucher/vadidate?code=`+$scope.voucher.voucherCode).then(resp => {
+            $http.get(`/rest/voucher/vadidate?code=`+$scope.voucher.voucherCode+"&total="+$scope.cart.amount).then(resp => {
                 const isValidVoucher  =  resp.data;
                 if(isValidVoucher!=1000){ // Voucher không hợp lệ
                     if(isValidVoucher==1001){
                         $scope.voucher.errorMessage = "Voucher không tồn tại."
                         this.voucherPrice = 0;
                         this.isValid = 2;
+                        localStorage.setItem("voucher_sell", "");
                     }else if(isValidVoucher==1002){
                         $scope.voucher.errorMessage = "Voucher hết hạn."
                         this.voucherPrice = 0;
                         this.isValid = 2;
-                    }else{
+                        localStorage.setItem("voucher_sell", "")
+                    }else if(isValidVoucher==1004){
+                        $scope.voucher.errorMessage = "Hoá đơn chưa đủ điều kiện áp dụng Voucher."
+                        $http.get(`/rest/voucher/code?code=`+this.voucherCode).then(resp => {
+                            this.voucherPrice =0 ;
+                            this.estimate = resp.data.estimate ;
+                            this.isValid = 2;
+                            // localStorage.setItem("voucher_sell", "")
+                        }).catch(error => {
+                            console.log(error)
+                        })
+                     }
+                    else{
                         $scope.voucher.errorMessage = "Voucher không hợp lệ."
                         this.voucherPrice = 0;
                         this.isValid = 2;
+                        localStorage.setItem("voucher_sell", "")
                     }
                 }else{
-                    this.isValid = 1;
+                    if (this.voucherCode) this.isValid = 1;
                     $scope.voucher.errorMessage =  ""
                     localStorage.setItem("voucher_sell", this.voucherCode);
                     this.getVoucher(this.voucherCode);
@@ -84,6 +101,7 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
             });
         },
         formatVND(number){
+            if(!number || number==0) return  0
             var formattedVND = number.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
             return formattedVND;
         } ,
@@ -99,8 +117,13 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                     this.updateViewWhenChangeQuantityItem(product_id,-1)
                     this.items.push(resp.data);
                     this.saveToLocalStorage();
+
+                    $scope.voucher.saveVoucherCode()
                 })
             }
+
+
+
         },
         get_infoorderid(orderid){
             this.get_orderid = orderid;
@@ -160,6 +183,7 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
             }
 
             this.items.splice(index, 1);
+            $scope.voucher.saveVoucherCode()
             this.saveToLocalStorage();
         },
         clear() {
@@ -227,6 +251,7 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 return element;
             });
             this.items = updatedArray
+            $scope.voucher.saveVoucherCode()
         },
 
         loadFromLocalStorage() {
@@ -257,6 +282,72 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
     $scope.cart.getProducts(1);
     $scope.voucher.getVoucher(localStorage.getItem('voucher_sell') || '')
     $scope.cart.loadFromLocalStorage();
+    $scope.orderPending = []
+    $scope.orderPendingDetail ={
+        order_id:0,
+        createDate: new Date(),
+        address: "",
+        phone : "",
+        status : 0,
+        intent: 'Sale',
+        method: 'Trả trực tiếp',
+        currency: 'VND',
+        description: '',
+        voucher_price:0,
+        money_give:0,
+        money_send:0,
+        price : 0,
+        account: { username:""},
+         caculatorMoneySendOfOrderPending(){
+            const amount = this.price - this.voucher_price;
+            const moneySend = this.money_give - amount;
+            const totalAmount = (moneySend > 0) ? moneySend: 0;
+            this.money_send=  totalAmount;
+        },
+         purchaseOrderPending() {
+            var order = {
+                order_id:this.order_id,
+                createDate: this.createDate,
+                address: this.address,
+                phone :this.phone,
+                status : 3,
+                intent: 'Sale',
+                method: 'Trả trực tiếp',
+                currency: 'VND',
+                description: this.description,
+                voucher_price:this.voucher_price,
+                money_give:this.money_give,
+                money_send:this.money_send,
+                price : this.price,
+                account:this.account,
+            };
+            console.log(order)
+            $http.put("/rest/orders/pending/update", order).then(resp => {
+                alert("Cập nhật trạng thái đơn hàng thành công");
+                $("#modal-checkout").modal("hide")
+                $scope.cart.printBill(resp.data.pathFile)
+                $scope.voucher.voucherCode =""
+                $("#modal-order-pending-detail").modal("hide")
+            }).catch(error => {
+                if (error?.data) {
+                    if (error.data.status == 444) alert(error.data.data);
+                    else {
+                        try {
+                            var alertMessage = "";
+                            const jsonArray = JSON.parse(error.data.message);
+                            jsonArray.forEach(function (item) {
+                                alertMessage += item + "\n";
+                            });
+                            alert(alertMessage)
+                        }catch (e) {
+                            alert(error.data.message)
+                        }
+                    }
+                } else alert("Đặt hàng thất bại");
+                console.log(error)
+            })
+        }
+    }
     $scope.order = {
         createDate: new Date(),
         address: "",
@@ -279,7 +370,8 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                     quantity: item.quantity
                 }
             });
-        },
+        }
+        ,
         caculatorMoneySend(){
             const amount = $scope.cart.amount - $scope.voucher.voucherPrice;
             const moneySend = this.money_give - amount;
@@ -292,6 +384,77 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
           this.description="";
           this.money_give=0;
           $scope.voucher.isValid =0;
+        },
+        viewDetailOrderPending(id){
+            $http.get("/rest/orders/pending/"+id).then(resp =>{
+                $scope.orderPendingDetail.createDate = resp.data.createDate;
+                $scope.orderPendingDetail.address = resp.data.address.trim();
+                $scope.orderPendingDetail.phone = resp.data.phone.trim();
+                $scope.orderPendingDetail.status = resp.data.status;
+                $scope.orderPendingDetail.intent = resp.data.intent;
+                $scope.orderPendingDetail.method = resp.data.method;
+                $scope.orderPendingDetail.currency = resp.data.currency;
+                $scope.orderPendingDetail.description = resp.data.description.trim();
+                $scope.orderPendingDetail.voucher_price = resp.data.voucher_price;
+                $scope.orderPendingDetail.money_give = resp.data.money_give;
+                $scope.orderPendingDetail.money_send = resp.data.money_send;
+                $scope.orderPendingDetail.price = resp.data.price;
+                $scope.orderPendingDetail.account = resp.data.account;
+                $scope.orderPendingDetail.order_id = resp.data.order_id;
+                console.log(resp.data)
+                $("#modal-order-pending").modal("hide")
+                $("#modal-order-pending-detail").modal("show")
+            })
+        },
+        showOrderPending(){
+            $("#modal-checkout").modal("hide")
+            $http.get("/rest/orders/pending").then(resp =>{
+                $scope.orderPending = resp.data;
+                console.log(resp.data)
+                $("#modal-order-pending").modal("show")
+            })
+
+        },
+        purchaseWithStatus() {
+            if($scope.cart.amount!=0){
+                var confirmation = window.confirm("Hóa đơn chưa thanh toán sẽ lưu thành trạng thái chờ. Bạn có chắc muốn thực hiện hành động này không?");
+                if(confirmation){
+                    var order = angular.copy(this);
+                    order.price = $scope.cart.amount;
+                    order.account.username = $scope.cart.username ? $scope.cart.username : "Anonymous";
+                    order.voucher_price = $scope.voucher.voucherPrice;
+                    $http.post("/rest/orders/sell/status?code=" + $scope.voucher.voucherCode, order).then(resp => {
+                        alert("Đơn đã được thêm vào danh sách chờ!");
+                        $scope.cart.clear();
+                        this.clear();
+                        $("#modal-checkout").modal("hide")
+                        $scope.voucher.voucherPrice = 0
+                        $scope.voucher.clearVoucher();
+                        $scope.voucher.voucherCode = "";
+                        $scope.order.money_give = 0
+                        $scope.order.money_send = 0
+
+                    }).catch(error => {
+                        if (error?.data) {
+                            if (error.data.status == 444) alert(error.data.data);
+                            else {
+                                try {
+                                    var alertMessage = "";
+                                    const jsonArray = JSON.parse(error.data.message);
+                                    jsonArray.forEach(function (item) {
+                                        alertMessage += item + "\n";
+                                    });
+                                    alert(alertMessage)
+                                }catch (e) {
+                                   alert(error.data.message)
+                                }
+                            }
+                        } else alert("Đặt hàng thất bại");
+                        console.log(error)
+                    })
+                }
+            }
+
         },
         purchase() {
 
@@ -310,32 +473,23 @@ app.controller("shopping-cart-sell-ctrl", function($scope, $http) {
                 $scope.voucher.voucherCode = "";
                 $scope.order.money_give = 0
                 $scope.order.money_send = 0
-                // $scope.order = {
-                //     createDate: new Date(),
-                //     address: "",
-                //     phone: "",
-                //     status: 0,
-                //     intent: 'Sale',
-                //     method: 'Trả trực tiếp',
-                //     currency: 'VND',
-                //     description: '',
-                //     voucher_price: 0,
-                //     money_give: 0,
-                //     money_send: 0,
-                //     price: 0,
-                //     account: {username: ""}
-                // }
-               // window.location.reload();
+
             }).catch(error => {
                 if(error?.data){
                     if(error.data.status==444)alert(error.data.data);
                     else {
-                        var alertMessage = "";
-                        const jsonArray = JSON.parse(error.data.message);
-                        jsonArray.forEach(function(item) {
-                            alertMessage += item + "\n";
-                        });
-                        alert(alertMessage)
+                        try {
+                            var alertMessage = "";
+                            const jsonArray = JSON.parse(error.data.message);
+                            jsonArray.forEach(function (item) {
+                                alertMessage += item + "\n";
+                            });
+                            alert(alertMessage)
+                        }catch (e) {
+                            alert(error.data.message)
+                        }
+
+
                     }
                 }
                 else alert("Đặt hàng thất bại");

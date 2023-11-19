@@ -38,6 +38,7 @@
 								<th>Ngày tạo</th>
 								<th>Ngày hết hạn</th>
 								<th>Giá voucher</th>
+								<th>Mức giá áp dụng</th>
 								<th></th>
 							</tr>
 						</thead>
@@ -50,7 +51,7 @@
 								<td>[[${#dates.format(voucher.endDate, 'yyyy-MM-dd
 								HH:mm')}]]</td>
 								<td>[[${#numbers.formatDecimal(voucher.voucher_price, 3 , 'COMMA',0,'POINT')}]] Đ</td>
-
+								<td th:text="${voucher.estimate != null ? #numbers.formatDecimal(voucher.estimate, 3, 'COMMA', 0, 'POINT') + ' Đ' : '0 Đ'}"></td>
 								<td><a
 									th:href="@{|/admin/voucher/edit?voucher_id=${voucher.voucher_id}|}"
 									class="btn btn-round btn-info"> <i class="fa fa-pencil"></i></a>
